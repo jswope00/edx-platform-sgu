@@ -440,3 +440,13 @@ def select_transcript_format(_step, format):
 
     assert world.css_find(menu_selector + ' .active a')[0]['data-value'] == format
     assert button.text.strip() == '.' + format
+
+
+@step('transcript is downloadable$')
+def transcript_is_downloaded(_step):
+    world.wait_for_ajax_complete()
+    request = RequestHandler()
+    download_button_url = world.css_find('.video-tracks a').first['href']
+    request.connect(download_button_url)
+    return request.status_code.is_success()
+
