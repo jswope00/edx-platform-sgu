@@ -143,6 +143,7 @@ class TestGetHtmlMethod(BaseTestXmodule):
                 <source src="example.mp4"/>
                 <source src="example.webm"/>
                 {track}
+                {transcripts}
             </video>
         """
 
@@ -152,24 +153,35 @@ class TestGetHtmlMethod(BaseTestXmodule):
                 'track': u'<track src="http://www.example.com/track"/>',
                 'sub': u'a_sub_file.srt.sjson',
                 'expected_track_url': u'http://www.example.com/track',
+                'transcripts': '' ,
             },
             {
                 'download_track': u'true',
                 'track': u'',
                 'sub': u'a_sub_file.srt.sjson',
                 'expected_track_url': u'a_sub_file.srt.sjson',
+                'transcripts': '' ,
             },
             {
                 'download_track': u'true',
                 'track': u'',
                 'sub': u'',
-                'expected_track_url': None
+                'expected_track_url': None,
+                'transcripts': '' ,
             },
             {
                 'download_track': u'false',
                 'track': u'<track src="http://www.example.com/track"/>',
                 'sub': u'a_sub_file.srt.sjson',
                 'expected_track_url': None,
+                'transcripts': '' ,
+            },
+            {
+                'download_track': u'true',
+                'track': u'',
+                'sub': u'',
+                'expected_track_url': u'a_sub_file.srt.sjson',
+                'transcripts': '<transcript language="uk" src="ukrainian.srt" />',
             },
         ]
 
@@ -201,7 +213,8 @@ class TestGetHtmlMethod(BaseTestXmodule):
             DATA = SOURCE_XML.format(
                 download_track=data['download_track'],
                 track=data['track'],
-                sub=data['sub']
+                sub=data['sub'],
+                transcripts=data['transcripts'],
             )
 
             self.initialize_module(data=DATA)
@@ -213,8 +226,8 @@ class TestGetHtmlMethod(BaseTestXmodule):
 
             expected_context.update({
                 'transcript_download_format': None if self.item_descriptor.track and self.item_descriptor.download_track else 'srt',
-                'transcript_languages': '{"en": "English"}',
-                'transcript_language': 'en',
+                'transcript_languages': '{"en": "English"}'  if not data['transcripts'] else '{"uk": "Ukrainian"}',
+                'transcript_language': 'en' if not data['transcripts'] or data.get('sub') else 'uk',
                 'transcript_translation_url': self.item_descriptor.xmodule_runtime.handler_url(
                     self.item_descriptor, 'transcript'
                 ).rstrip('/?') + '/translation',
