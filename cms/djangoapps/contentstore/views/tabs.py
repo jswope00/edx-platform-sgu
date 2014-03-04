@@ -138,7 +138,7 @@ def tabs_handler(request, tag=None, package_id=None, branch=None, version_guid=N
             if tab['type'] == 'static_tab':
                 static_tab_loc = old_location.replace(category='static_tab', name=tab['url_slug'])
                 static_tabs.append(modulestore('direct').get_item(static_tab_loc))
-            else:
+            elif 'name' in tab:
                 built_in_tabs.append({'name': tab['name']})
 
         # create a list of xCode components for the list of static tabs
