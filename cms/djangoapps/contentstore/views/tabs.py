@@ -13,6 +13,7 @@ from edxmako.shortcuts import render_to_response
 from xmodule.modulestore.django import modulestore
 from xmodule.modulestore.django import loc_mapper
 from xmodule.modulestore.locator import BlockUsageLocator
+from xmodule.tabs import CourseTabList
 
 from ..utils import get_modulestore
 
@@ -130,11 +131,17 @@ def tabs_handler(request, tag=None, package_id=None, branch=None, version_guid=N
         if course_item.tabs is None or len(course_item.tabs) == 0:
             initialize_course_tabs(course_item, request.user)
 
+        tab_list = CourseTabList.from_course(
+            course_item,
+            include_authenticated_tabs = True,
+            include_staff_tabs = True
+        )
+
         # get all tabs from the tabs list: static tabs (a.k.a. user-created tabs) and built-in tabs
         # we do this because this is also the order in which items are displayed in the LMS
         static_tabs = []
         built_in_tabs = []
-        for tab in course_item.tabs:
+        for tab in tab_list:
             if tab['type'] == 'static_tab':
                 static_tab_loc = old_location.replace(category='static_tab', name=tab['url_slug'])
                 static_tabs.append(modulestore('direct').get_item(static_tab_loc))
