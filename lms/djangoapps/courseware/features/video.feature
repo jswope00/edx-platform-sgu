@@ -176,3 +176,13 @@ Feature: LMS Video component
     Then I can download transcript in "txt" format
     When I open video "C"
     Then menu "download_transcript" doesn't exist
+
+  # 20
+  Scenario: Download button works correctly w/o english transcript in Youtube mode of Video component
+    Given the course has a Video component in Youtube mode:
+      | transcripts           | sub         | download_track |
+      | {"zh": "OEoXaMPEzfM"} | OEoXaMPEzfM | true           |
+    And I select language with code "zh"
+    And I see "好 各位同学" text in the captions
+    And transcript is downloadable
+
