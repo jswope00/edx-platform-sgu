@@ -347,7 +347,7 @@ class VideoModule(VideoFields, XModule):
             elif self.youtube_id_1_0:  # old courses
                 sub_id = self.youtube_id_1_0
             elif self.html5_sources:
-                sub_id = sef.html5_sources[0]  # old courses
+                sub_id = self.html5_sources[0]  # old courses
             else:
                 log.debug("No subtitles for 'en' language")
                 raise ValueError
