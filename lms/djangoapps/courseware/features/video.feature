@@ -82,7 +82,7 @@ Feature: LMS Video component
   # 10
   Scenario: Language menu works correctly in Video component
     Given the course has a Video component in Youtube mode:
-      | transcripts           | sub         |
+      | transcripts                       | sub         |
       | {"zh": "chinese_transcripts.srt"} | OEoXaMPEzfM |
     And I make sure captions are closed
     And I see video menu "language" with correct items
@@ -180,8 +180,8 @@ Feature: LMS Video component
   # 20
   Scenario: Download button works correctly w/o english transcript in Youtube mode of Video component
     Given the course has a Video component in Youtube mode:
-      | transcripts           | sub         | download_track |
-      | {"zh": "OEoXaMPEzfM"} | OEoXaMPEzfM | true           |
+      | transcripts                       | sub         | download_track |
+      | {"zh": "chinese_transcripts.srt"} | OEoXaMPEzfM | true           |
     And I select language with code "zh"
     And I see "好 各位同学" text in the captions
     And transcript is downloadable

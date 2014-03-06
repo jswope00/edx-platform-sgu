@@ -5,11 +5,7 @@ import os
 import requests
 from functools import partial
 from lettuce import world, step
-from nose.tools import assert_equal
-from splinter.request_handler.request_handler import RequestHandler
 import json
-import os
-import requests
 from common import i_am_registered_for_the_course, section_location, visit_scenario_item
 from django.utils.translation import ugettext as _
 from django.conf import settings
@@ -110,7 +106,7 @@ def add_video_to_course(course, player_mode, hashes, display_name='Video'):
         })
     if player_mode == 'youtube_html5':
         kwargs['metadata'].update({
-            'html5_sources': HTML5_SOURCES
+            'html5_sources': HTML5_SOURCES,
         })
     if player_mode == 'youtube_html5_unsupported_video':
         kwargs['metadata'].update({
@@ -139,6 +135,21 @@ def add_video_to_course(course, player_mode, hashes, display_name='Video'):
         if key in conversions:
             kwargs['metadata'][key] = conversions[key](kwargs['metadata'][key])
 
+    if 'sub' in kwargs['metadata']:
+        filename = _get_sjson_filename(kwargs['metadata']['sub'], 'en')
+        _upload_file(filename, course_location)
+
+    conversions = {
+        'transcripts': json.loads,
+        'download_track': json.loads,
+        'download_video': json.loads,
+    }
+
+    for key in kwargs['metadata']:
+        if key in conversions:
+            kwargs['metadata'][key] = conversions[key](kwargs['metadata'][key])
+
+    course_location = world.scenario_dict['COURSE'].location
     if 'sub' in kwargs['metadata']:
         filename = _get_sjson_filename(kwargs['metadata']['sub'], 'en')
         _upload_file(filename, course_location)
@@ -180,7 +191,6 @@ def _change_video_speed(speed):
     speed_css = 'li[data-speed="{0}"] a'.format(speed)
     world.css_click(speed_css)
 
-
 def _open_menu(menu):
     world.browser.execute_script("$('{selector}').parent().addClass('open')".format(
         selector=VIDEO_MENUS[menu]
@@ -212,7 +222,6 @@ def _set_window_dimensions(width, height):
     world.browser.driver.set_window_size(width, height)
     # Wait 200 ms when JS finish resizing
     world.wait(0.2)
-
 
 @step('when I view the (.*) it does not have autoplay enabled$')
 def does_not_autoplay(_step, video_type):
@@ -352,7 +361,6 @@ def select_language(_step, code):
 def click_button(_step, button):
     world.css_click(VIDEO_BUTTONS[button])
 
-
 @step('I see video starts playing from "([^"]*)" position$')
 def start_playing_video_from_n_seconds(_step, position):
     world.wait_for(
@@ -449,9 +457,7 @@ def select_transcript_format(_step, format):
 
 
 @step('transcript is downloadable$')
-def transcript_is_downloaded(_step):
-    world.wait_for_ajax_complete()
-    download_button_url = world.css_find('.video-tracks a').first['href']
-    session_id_cookie = ({i['name']:i['value']} for i in  world.browser.cookies.all() if i['name']==u'sessionid').next()
-    result = requests.get(download_button_url, cookies=session_id_cookie)
-    assert_equal(result.status_code, 200)
+def transcript_is_downloadable(_step):
+    url = world.css_find('.video-tracks a').first['href']
+    assert ReuqestHandlerWithSessionId().get(url).is_success()
+
