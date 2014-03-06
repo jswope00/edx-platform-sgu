@@ -299,15 +299,17 @@ class TestVideoTranscriptsDownload(TestVideo):
     """
     Make sure that `get_transcript` method works correctly
     """
-
+    non_en_file = _create_srt_file()
     DATA = """
         <video show_captions="true"
         display_name="A Name"
         >
             <source src="example.mp4"/>
             <source src="example.webm"/>
+            <transcript language="uk" src="{}"/>
         </video>
-    """
+    """.format(os.path.split(non_en_file.name)[1])
+
     MODEL_DATA = {
         'data': DATA
     }
@@ -318,7 +320,10 @@ class TestVideoTranscriptsDownload(TestVideo):
         self.item_descriptor.render('student_view')
         self.item = self.item_descriptor.xmodule_runtime.xmodule_instance
 
-    def test_good_srt_transcript(self):
+    def test_good_transcript(self):
+        """
+        Test for download 'en' sub with html5 video and self.sub has correct non-empty value.
+        """
         good_sjson = _create_file(content=textwrap.dedent("""\
                 {
                   "start": [
@@ -382,9 +387,63 @@ class TestVideoTranscriptsDownload(TestVideo):
 
         self.assertEqual(text, expected_text)
 
-    def test_not_found_error(self):
+    def test_en_with_empty_sub(self):
+        # no self.sub, self.youttube_1_0 exist, but no file in assets
+
         with self.assertRaises(NotFoundError):
             self.item.get_transcript()
+
+        # no self.sub and no self.youtube_1_0
+        with self.assertRaises(NotFoundError):
+            self.item.get_transcript()
+
+        # no self.sub but youtube_1_0 exists with file in assets
+        good_sjson = _create_file(content=textwrap.dedent("""\
+                {
+                  "start": [
+                    270,
+                    2720
+                  ],
+                  "end": [
+                    2720,
+                    5430
+                  ],
+                  "text": [
+                    "Hi, welcome to Edx.",
+                    "Let&#39;s start with what is on your screen right now."
+                  ]
+                }
+            """))
+        _upload_sjson_file(good_sjson, self.item.location)
+        self.item.youtube_id_1_0 = _get_subs_id(good_sjson.name)
+
+        text, filename = self.item.get_transcript()
+        expected_text = textwrap.dedent("""\
+            0
+            00:00:00,270 --> 00:00:02,720
+            Hi, welcome to Edx.
+
+            1
+            00:00:02,720 --> 00:00:05,430
+            Let&#39;s start with what is on your screen right now.
+
+            """)
+
+        self.assertEqual(text, expected_text)
+        self.assertEqual(filename, self.item.youtube_id_1_0)
+
+    def test_non_en(self):
+        self.item.transcript_language = 'uk'
+        self.non_en_file.seek(0)
+        _upload_file(self.non_en_file, self.item_descriptor.location, os.path.split(self.non_en_file.name)[1])
+        text, filename = self.item.get_transcript()
+        expected_text = textwrap.dedent("""
+        0
+        00:00:00,12 --> 00:00:00,100
+        Привіт, edX вітає вас.
+        """)
+        self.assertEqual(text, expected_text)
+        self.assertEqual(filename, os.path.splitext(os.path.split(self.non_en_file.name)[1])[0])
 
     def test_value_error(self):
         good_sjson = _create_file(content='bad content')
