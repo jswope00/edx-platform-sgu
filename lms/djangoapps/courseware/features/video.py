@@ -347,9 +347,8 @@ def select_language(_step, code):
     selector = VIDEO_MENUS["language"] + ' li[data-lang-code={code}]'.format(
         code=code
     )
-    item = world.css_find(selector)
 
-    item.click()
+    world.css_click(selector)
 
     assert world.css_has_class(selector, 'active')
     assert len(world.css_find(VIDEO_MENUS["language"] + ' li.active')) == 1
