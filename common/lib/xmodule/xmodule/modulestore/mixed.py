@@ -283,7 +283,6 @@ class MixedModuleStore(ModuleStoreWriteBase):
         :param metadata: the old way of setting fields by knowing which ones are scope.settings v scope.content
         :param definition_data: the complement to metadata which is also a subset of fields
         :param id_root: the split-mongo course_id starting value (see split.create_course)
-        :param pretty_id: a field split.create_course uses and may quit using
         :returns: course xblock
         """
         store = self.modulestores[store_name]
@@ -301,11 +300,10 @@ class MixedModuleStore(ModuleStoreWriteBase):
                 if id_root is None:
                     id_root = course_id
             org = kwargs.pop('org', org)
-            pretty_id = kwargs.pop('pretty_id', id_root)
             fields = kwargs.pop('fields', {})
             fields.update(kwargs.pop('metadata', {}))
             fields.update(kwargs.pop('definition_data', {}))
-            course = store.create_course(org, pretty_id, user_id, id_root=id_root, fields=fields, **kwargs)
+            course = store.create_course(org, user_id, id_root=id_root, fields=fields, **kwargs)
         else:  # assume mongo
             course = store.create_course(course_id, **kwargs)
 

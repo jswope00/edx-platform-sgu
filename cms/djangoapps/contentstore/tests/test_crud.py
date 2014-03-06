@@ -53,13 +53,14 @@ class TemplateTests(unittest.TestCase):
         self.assertIsNotNone(HtmlDescriptor.get_template('announcement.yaml'))
 
     def test_factories(self):
-        test_course = persistent_factories.PersistentCourseFactory.create(org='testx', prettyid='tempcourse',
-            display_name='fun test course', user_id='testbot')
+        test_course = persistent_factories.PersistentCourseFactory.create(
+            org='testx', id_root='testx.tempcourse', display_name='fun test course', user_id='testbot'
+        )
         self.assertIsInstance(test_course, CourseDescriptor)
         self.assertEqual(test_course.display_name, 'fun test course')
         index_info = modulestore('split').get_course_index_info(test_course.location)
         self.assertEqual(index_info['org'], 'testx')
-        self.assertEqual(index_info['prettyid'], 'tempcourse')
+        self.assertEqual(index_info['_id'], 'testx.tempcourse')
 
         test_chapter = persistent_factories.ItemFactory.create(display_name='chapter 1',
             parent_location=test_course.location)
@@ -72,8 +73,9 @@ class TemplateTests(unittest.TestCase):
         """
         Test using load_from_json to create non persisted xblocks
         """
-        test_course = persistent_factories.PersistentCourseFactory.create(org='testx', prettyid='tempcourse',
-            display_name='fun test course', user_id='testbot')
+        test_course = persistent_factories.PersistentCourseFactory.create(
+            org='testx', id_root='testx.tempcourse', display_name='fun test course', user_id='testbot'
+        )
 
         test_chapter = self.load_from_json({'category': 'chapter',
             'fields': {'display_name': 'chapter n'}},
@@ -98,8 +100,8 @@ class TemplateTests(unittest.TestCase):
         try saving temporary xblocks
         """
         test_course = persistent_factories.PersistentCourseFactory.create(
-            org='testx', prettyid='tempcourse',
-            display_name='fun test course', user_id='testbot')
+            org='testx', id_root='testx.tempcourse', display_name='fun test course', user_id='testbot'
+        )
         test_chapter = self.load_from_json({'category': 'chapter',
             'fields': {'display_name': 'chapter n'}},
             test_course.system, parent_xblock=test_course)
@@ -136,7 +138,7 @@ class TemplateTests(unittest.TestCase):
     def test_delete_course(self):
         test_course = persistent_factories.PersistentCourseFactory.create(
             org='testx',
-            prettyid='edu.harvard.history.doomed',
+            id_root='edu.harvard.history.doomed',
             display_name='doomed test course',
             user_id='testbot')
         persistent_factories.ItemFactory.create(display_name='chapter 1',
@@ -160,7 +162,7 @@ class TemplateTests(unittest.TestCase):
         """
         test_course = persistent_factories.PersistentCourseFactory.create(
             org='testx',
-            prettyid='edu.harvard.history.hist101',
+            id_root='edu.harvard.history.hist101',
             display_name='history test course',
             user_id='testbot')
         chapter = persistent_factories.ItemFactory.create(display_name='chapter 1',
