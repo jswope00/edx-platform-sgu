@@ -10,6 +10,7 @@ in-browser HTML5 video method (when in HTML5 mode).
 in XML.
 """
 
+import os
 import json
 import logging
 from operator import itemgetter
