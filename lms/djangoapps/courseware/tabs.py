@@ -12,43 +12,41 @@ actually generates the CourseTab.
 from collections import namedtuple
 import logging
 
-from courseware.access import has_access
-
 from .module_render import get_module
-from courseware.access import has_access
-from xmodule.modulestore import Location
 from xmodule.modulestore.django import modulestore
+from xmodule.tabs import CourseTabList, StaffGradingTab, PeerGradingTab, OpenEndedGradingTab
+from courseware.access import has_access
 from courseware.model_data import FieldDataCache
-
 from open_ended_grading import open_ended_notifications
 
 log = logging.getLogger(__name__)
 
-def CourseTab(name, link, is_active, has_img=False, img=""):
-    return CourseTabBase(name, link, is_active, has_img, img)
+def image_for_tab(course_tab, user, course):
+    if isinstance(course_tab, StaffGradingTab):
+        notifications = open_ended_notifications.staff_grading_notifications(course, user)
+    elif isinstance(course_tab, PeerGradingTab):
+        notifications = open_ended_notifications.peer_grading_notifications(course, user)
+    elif isinstance(course_tab, OpenEndedGradingTab):
+        notifications = open_ended_notifications.combined_notifications(course, user)
+    else:
+        notifications = None
 
-def _staff_grading(tab, user, course, request):
-    notifications  = open_ended_notifications.staff_grading_notifications(course, user)
-    pending_grading = notifications['pending_grading']
-    img_path = notifications['img_path']
-    return [CourseTab(tab_name, link, "staff_grading", pending_grading, img_path)]
+    if notifications and notifications['pending_grading']:
+        return notifications['img_path']
+    return None
 
-def _peer_grading(tab, user, course, request):
-    notifications = open_ended_notifications.peer_grading_notifications(course, user)
-    pending_grading = notifications['pending_grading']
-    img_path = notifications['img_path']
-    return [CourseTab(tab_name, link, "peer_grading", pending_grading, img_path)]
+def get_course_tabs(user, course):
+    """
+    Return the tabs to show a particular user, as a list of CourseTab items.
+    """
+    return CourseTabList.create(
+        course,
+        user.is_authenticated(),
+        has_access(user, course, 'staff')
+    )
 
-
-def _combined_open_ended_grading(tab, user, course, request):
-    notifications  = open_ended_notifications.combined_notifications(course, user)
-    pending_grading = notifications['pending_grading']
-    img_path = notifications['img_path']
-
-    return [CourseTab(tab_name, link, "open_ended", pending_grading, img_path)]
-
-def get_static_tab_contents(request, course, tab):
-    loc = Location(course.location.tag, course.location.org, course.location.course, 'static_tab', tab['url_slug'])
+def get_static_tab_contents(request, course, static_tab):
+    loc = static_tab.get_location()
     field_data_cache = FieldDataCache.cache_for_descriptor_descendents(course.id,
         request.user, modulestore().get_instance(course.id, loc), depth=0)
     tab_module = get_module(request.user, request, loc, field_data_cache, course.id,

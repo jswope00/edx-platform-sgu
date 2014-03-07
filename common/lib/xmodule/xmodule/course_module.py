@@ -465,7 +465,7 @@ class CourseDescriptor(CourseFields, SequenceDescriptor):
             self.discussion_topics = {_('General'): {'id': self.location.html_id()}}
 
         if not self.tabs:
-            self.tabs = CourseTabList.default_for_course(
+            self.tabs = CourseTabList.create_default(
                 self,
                 include_authenticated_tabs = True,
                 include_staff_tabs = True

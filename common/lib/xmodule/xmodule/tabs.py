@@ -1,9 +1,10 @@
-from collections import namedtuple
+from abc import ABCMeta, abstractproperty
+
 from xblock.fields import List
+from xmodule.modulestore import Location
+
 from django.conf import settings
 from django.core.urlresolvers import reverse
-
-from abc import ABCMeta, abstractmethod, abstractproperty
 
 # NAATODO - is this doing the correct thing?
 # We only need to scrape strings for i18n in this file, since ugettext is
@@ -39,7 +40,7 @@ class CourseTab(object):
     #  A factory function that takes a course and an optional tab if it pre-exists.
     #  If tab is given, the function can assume that it has passed the validator.
     @classmethod
-    def factory(cls, course, tab, include_authenticated_tabs):
+    def factory(cls, course, tab, include_authenticated_tabs, include_staff_tabs):
         tab_type_name = tab['type']
         if tab_type_name not in COURSE_TAB_CLASSES:
             raise InvalidTabsException(
@@ -48,6 +49,8 @@ class CourseTab(object):
 
         tab_class = COURSE_TAB_CLASSES[tab['type']]
         if tab_class is AuthenticatedCourseTab and include_authenticated_tabs is False:
+            return None
+        if tab_class is StaffTab and include_staff_tabs is False:
             return None
         tab_class.validate(tab)
         return tab_class.create(course, tab)
@@ -156,7 +159,7 @@ class DiscussionTab(CourseTab):
         need_name(tab)
 
     @classmethod
-    def create(cls, course, tab=None):
+    def create(cls, course, tab):
         if settings.FEATURES.get('ENABLE_DISCUSSION_SERVICE'):
             return [
                 cls(
@@ -165,6 +168,16 @@ class DiscussionTab(CourseTab):
                     link_func=link_reverse('django_comment_client.forum.views.forum_form_discussion', course),
                 )]
         return []
+
+    @classmethod
+    def create_new(cls, course):
+        # Translators: "Discussion" is the title of the course forum page
+        return [
+            cls(
+                name=_('Discussion'),
+                active_page_name=cls.type_name,
+                link_func=link_reverse('django_comment_client.forum.views.forum_form_discussion', course),
+            )]
 
 class ExternalDiscussionTab(CourseTab):
     """
@@ -184,6 +197,16 @@ class ExternalDiscussionTab(CourseTab):
                 name=_('Discussion'),
                 active_page_name='discussion',
                 link_func=link_value(tab['link']),
+            )]
+
+    @classmethod
+    def create_new(cls, link):
+        # Translators: 'Discussion' refers to the tab in the courseware that leads to the discussion forums
+        return [
+            cls(
+                name=_('Discussion'),
+                active_page_name='discussion',
+                link_func=link_value(link),
             )]
 
 class ExternalLinkTab(CourseTab):
@@ -221,6 +244,13 @@ class StaticTab(CourseTab):
         static_tab.url_slug = tab['url_slug']
         return [static_tab]
 
+    def get_location(self, course):
+        return Location(
+            course.location.tag, course.location.org, course.location.course,
+            'static_tab',
+            self.url_slug
+        )
+
 class TextbookTabs(AuthenticatedCourseTab):
     def type_name(self): return 'textbooks'
 
@@ -234,7 +264,7 @@ class TextbookTabs(AuthenticatedCourseTab):
                     link_func=lambda: reverse('book', args=[course.id, index]),
                 )
                 for index, textbook in enumerate(course.textbooks)]
-            return []
+        return []
 
 class PDFTextbookTabs(AuthenticatedCourseTab):
     def type_name(self): return 'pdf_textbooks'
@@ -248,7 +278,6 @@ class PDFTextbookTabs(AuthenticatedCourseTab):
                 link_func=lambda: reverse('pdf_book', args=[course.id, index]),
             )
             for index, textbook in enumerate(course.pdf_textbooks)]
-        return []
 
 class HtmlTextbookTabs(AuthenticatedCourseTab):
     def type_name(self): return 'html_textbooks'
@@ -262,9 +291,14 @@ class HtmlTextbookTabs(AuthenticatedCourseTab):
                 link_func=lambda: reverse('html_book', args=[course.id, index]),
             )
             for index, textbook in enumerate(course.html_textbooks)]
-        return []
 
-class StaffGradingTab(CourseTab):
+class GradingTab(object):
+    pass
+
+class StaffTab(object):
+    pass
+
+class StaffGradingTab(CourseTab, GradingTab, StaffTab):
     def type_name(self): return 'staff_grading'
 
     @classmethod
@@ -278,7 +312,7 @@ class StaffGradingTab(CourseTab):
                 link_func=link_reverse(cls.type_name, course),
             )]
 
-class PeerGradingTab(AuthenticatedCourseTab):
+class PeerGradingTab(AuthenticatedCourseTab, GradingTab):
     def type_name(self): return 'peer_grading'
 
     @classmethod
@@ -292,7 +326,7 @@ class PeerGradingTab(AuthenticatedCourseTab):
                 link_func=link_reverse(cls.type_name, course),
             )]
 
-class OpenEndedGradingTab(AuthenticatedCourseTab):
+class OpenEndedGradingTab(AuthenticatedCourseTab, GradingTab):
     def type_name(self): return 'open_ended'
 
     @classmethod
@@ -334,7 +368,7 @@ class NotesTab(AuthenticatedCourseTab):
                 )]
         return []
 
-class InstructorTab(CourseTab):
+class InstructorTab(CourseTab, StaffTab):
     def type_name(self): return 'instructor'
 
     @classmethod
@@ -349,36 +383,36 @@ class InstructorTab(CourseTab):
             )]
 
 class CourseTabList(List):
-    def initialize_defaults(self, course, include_authenticated_tabs, include_staff_tabs):
+    @classmethod
+    def create_default(cls, course):
 
-        self.extend(CoursewareTab.create(course))
-        self.extend(CourseInfoTab.create(course))
-        self.extend(SyllabusTab.create(course))
+        course_tab_list = []
 
-        if include_authenticated_tabs:
-            self.extend(TextbookTabs.create(course))
+        course_tab_list.extend(CoursewareTab.create(course))
+        course_tab_list.extend(CourseInfoTab.create(course))
+        course_tab_list.extend(SyllabusTab.create(course))
+        course_tab_list.extend(TextbookTabs.create(course))
 
-        discussion_link = CourseTabList.get_discussion_link(course)
-        if discussion_link:
-            self.extend(DiscussionTab.create(discussion_link)) # NAATODO
+        # # If they have a discussion link specified, use that even if we feature
+        # # flag discussions off. Disabling that is mostly a server safety feature
+        # # at this point, and we don't need to worry about external sites.
+        if course.discussion_link:
+            course_tab_list.extend(ExternalDiscussionTab.create_new(course.discussion_link))
+        else:
+            course_tab_list.extend(DiscussionTab.create_new(course))
 
-        self.extend(WikiTab.create(course))
+        course_tab_list.extend(WikiTab.create(course))
+        course_tab_list.extend(ProgressTab.create(course))
 
-        if include_authenticated_tabs:
-            self.extend(ProgressTab.create(course))
-
-        if include_staff_tabs:
-            self.extend(InstructorTab.create(course))
+        return course_tab_list
 
     @classmethod
-    def from_course(cls, course, include_authenticated_tabs, include_staff_tabs):
+    def create(cls, course, include_authenticated_tabs, include_staff_tabs):
         """
         Return the tabs to show a particular user, as a list of CourseTab items.
         """
         if not hasattr(course, 'tabs') or not course.tabs:
-            new_tab_list = CourseTabList()
-            new_tab_list.initialize_defaults(course, include_authenticated_tabs, include_staff_tabs)
-            return new_tab_list
+            return cls.create_default(course)
 
         # validate the tabs
         cls.__validate_tabs(course)
@@ -387,7 +421,7 @@ class CourseTabList(List):
         for tab in course.tabs:
             # expect handlers to return lists--handles things that are turned off
             # via feature flags, and things like 'textbook' which might generate multiple tabs.
-            tab_list.extend(CourseTab.factory(course, tab, include_authenticated_tabs))
+            tab_list.extend(CourseTab.factory(course, tab, include_authenticated_tabs, include_staff_tabs))
 
         # Instructor tab is special--automatically added if user is staff for the course
         if include_staff_tabs:
@@ -431,52 +465,12 @@ class CourseTabList(List):
         Look for a tab with type 'static_tab' and the specified 'tab_slug'.  Returns
         the tab (a config dict), or None if not found.
         """
-        if course.tabs is None:
-            return None
-        for tab in course.tabs:
-            # The validation code checks that these exist.
-            if tab['type'] == 'static_tab' and tab['url_slug'] == tab_slug:
-                return StaticTab.create(course, tab)
-
+        if course.tabs:
+            for tab in course.tabs:
+                # The validation code checks that these exist.
+                if tab['type'] == 'static_tab' and tab['url_slug'] == tab_slug:
+                    return StaticTab.create(course, tab)
         return None
-
-    @staticmethod
-    def get_static_tab_contents(request, course, tab):
-        loc = Location(course.location.tag, course.location.org, course.location.course, 'static_tab', tab['url_slug'])
-        field_data_cache = FieldDataCache.cache_for_descriptor_descendents(course.id,
-            request.user, modulestore().get_instance(course.id, loc), depth=0)
-        tab_module = get_module(request.user, request, loc, field_data_cache, course.id,
-                                static_asset_path=course.static_asset_path)
-
-        logging.debug('course_module = {0}'.format(tab_module))
-
-        html = ''
-
-        if tab_module is not None:
-            html = tab_module.render('student_view').content
-
-        return html
-
-    @staticmethod
-    def get_discussion_link(course):
-        """
-        Return the URL for the discussion tab for the given `course`.
-
-        If they have a discussion link specified, use that even if we disable
-        discussions. Disabling discussions is mostly a server safety feature at
-        this point, and we don't need to worry about external sites. Otherwise,
-        if the course has a discussion tab or uses the default tabs, return the
-        discussion view URL. Otherwise, return None to indicate the lack of a
-        discussion tab.
-        """
-        if course.discussion_link:
-            return course.discussion_link
-        elif not settings.FEATURES.get('ENABLE_DISCUSSION_SERVICE'):
-            return None
-        elif hasattr(course, 'tabs') and course.tabs and not any([tab['type'] == 'discussion' for tab in course.tabs]):
-            return None
-        else:
-            return reverse('django_comment_client.forum.views.forum_form_discussion', args=[course.id])
 
     def to_json(self, values):
         json_data = []

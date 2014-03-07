@@ -133,7 +133,7 @@ def tabs_handler(request, tag=None, package_id=None, branch=None, version_guid=N
         if course_item.tabs is None or len(course_item.tabs) == 0:
             initialize_course_tabs(course_item, request.user)
 
-        tab_list = CourseTabList.from_course(
+        tab_list = CourseTabList.create(
             course_item,
             include_authenticated_tabs = True,
             include_staff_tabs = True
