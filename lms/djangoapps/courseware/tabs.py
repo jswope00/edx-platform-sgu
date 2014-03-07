@@ -24,10 +24,6 @@ from open_ended_grading import open_ended_notifications
 
 log = logging.getLogger(__name__)
 
-
-CourseTabBase = namedtuple('CourseTab', 'name link is_active has_img img')
-
-
 def CourseTab(name, link, is_active, has_img=False, img=""):
     return CourseTabBase(name, link, is_active, has_img, img)
 
@@ -50,24 +46,6 @@ def _combined_open_ended_grading(tab, user, course, request):
     img_path = notifications['img_path']
 
     return [CourseTab(tab_name, link, "open_ended", pending_grading, img_path)]
-
-def get_course_tabs(user, course, active_page, request):
-    """
-    Return the tabs to show a particular user, as a list of CourseTab items.
-    """
-
-   #NAATODO
-    return tabs
-
-
-def get_discussion_link(course):
-    """
-    Return the URL for the discussion tab for the given `course`.
-    """
-
-    # NAATODO
-    pass
-
 
 def get_static_tab_contents(request, course, tab):
     loc = Location(course.location.tag, course.location.org, course.location.course, 'static_tab', tab['url_slug'])

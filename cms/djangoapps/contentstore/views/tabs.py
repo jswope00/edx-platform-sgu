@@ -13,7 +13,7 @@ from edxmako.shortcuts import render_to_response
 from xmodule.modulestore.django import modulestore
 from xmodule.modulestore.django import loc_mapper
 from xmodule.modulestore.locator import BlockUsageLocator
-from xmodule.tabs import CourseTabList
+from xmodule.tabs import CourseTabList, StaticTab
 
 from ..utils import get_modulestore
 
@@ -45,6 +45,8 @@ def initialize_course_tabs(course, user):
         # Translators: "Progress" is the title of the student's grade information page
         {"type": "progress", "name": _("Progress")},
     ]
+
+    # NAATODO - can this be done a different way?
 
     modulestore('direct').update_item(course, user.id)
 
@@ -142,11 +144,11 @@ def tabs_handler(request, tag=None, package_id=None, branch=None, version_guid=N
         static_tabs = []
         built_in_tabs = []
         for tab in tab_list:
-            if tab['type'] == 'static_tab':
-                static_tab_loc = old_location.replace(category='static_tab', name=tab['url_slug'])
+            if isinstance(tab, StaticTab):
+                static_tab_loc = old_location.replace(category='static_tab', name=tab.url_slug)
                 static_tabs.append(modulestore('direct').get_item(static_tab_loc))
-            elif 'name' in tab:
-                built_in_tabs.append({'name': tab['name']})
+            else:
+                built_in_tabs.append(tab)
 
         # create a list of xCode components for the list of static tabs
         components = [

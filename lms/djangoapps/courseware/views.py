@@ -20,7 +20,6 @@ from markupsafe import escape
 from courseware import grades
 from courseware.access import has_access
 from courseware.courses import get_courses, get_course_with_access, sort_by_announcement
-import courseware.tabs as tabs
 from courseware.masquerade import setup_masquerade
 from courseware.model_data import FieldDataCache
 from .module_render import toc_for_course, get_module_for_descriptor
@@ -36,6 +35,7 @@ from xmodule.modulestore.django import modulestore
 from xmodule.modulestore.exceptions import InvalidLocationError, ItemNotFoundError, NoPathToItem
 from xmodule.modulestore.search import path_to_location
 from xmodule.course_module import CourseDescriptor
+from xmodule.tabs import CourseTabList
 import shoppingcart
 
 from microsite_configuration import microsite
@@ -476,11 +476,11 @@ def static_tab(request, course_id, tab_slug):
     """
     course = get_course_with_access(request.user, course_id, 'load')
 
-    tab = tabs.get_static_tab_by_slug(course, tab_slug)
+    tab = CourseTabList.get_static_tab_by_slug(course, tab_slug)
     if tab is None:
         raise Http404
 
-    contents = tabs.get_static_tab_contents(
+    contents = CourseTabList.get_static_tab_contents(
         request,
         course,
         tab
