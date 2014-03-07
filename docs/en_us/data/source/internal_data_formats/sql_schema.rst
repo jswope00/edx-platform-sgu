@@ -31,7 +31,7 @@ The summary information provided about the SQL table columns uses the following 
 Type
 ========
 
-  This is the kind of data it is, along with the size of the field. When a numeric field has a length specified, it just means that's how many digits we want displayed. It has no effect on the number of bytes used.
+  The kind of data and the size of the field. When a numeric field has a length specified, the length indicates how many digits display but does not affect the number of bytes used.
 
   .. list-table::
      :widths: 25 65
@@ -46,7 +46,7 @@ Type
      * - tinyint
        - 1 byte integer, usually used to indicate a Boolean with 0 = False and 1 = True.
      * - varchar
-       - String, typically short and indexable. The length is the number of chars, not bytes (so Unicode friendly).
+       - String, typically short and indexable. The length is the number of chars, not bytes, to support multi-byte character sets.
      * - longtext
        - A long block of text, usually not indexed.
      * - date
@@ -108,7 +108,7 @@ The following tables store data gathered during site registration and course enr
 Columns in the auth_user Table
 ================================
 
-The ``auth_user`` table is built into the Django Web framework that we use. It holds generic information necessary for basic login and permissions information. 
+The ``auth_user`` table is built into the edX Django Web framework. It holds generic information necessary for basic login and permissions information. 
 
 A sample of the heading row and a data row in the ``auth_user`` table follow.
 
@@ -181,7 +181,7 @@ id
 ----------
 username
 ----------
-  The unique username for a user in our system. It can contain alphanumerics and the special characters shown within the brackets: [ _ @ + - . ]. The username is the only information that the students give about themselves that we currently expose to other students. We have never allowed people to change their usernames so far, but that's not something we guarantee going forward.
+  The unique username for a user in our system. It can contain alphanumerics and the special characters shown within the brackets: [ _ @ + - . ]. The username is the only user-provided information that other users can currently see. EdX has never allowed users to change usernames, but may do so in the future.
 
 ------------
 first_name
@@ -196,7 +196,7 @@ last_name
 -------
 email
 -------
-  The email address of the user. While Django by default makes this optional, we make it required, since it's the primary mechanism through which people log in. Must be unique to each user. Never shown to other users.
+  The user's email address, which is the primary mechanism users use to log in. This value is optional by default in Django, but is required by edX. This value must be unique to each user and is never shown to other users.
 
 ----------
 password
@@ -208,7 +208,7 @@ is_staff
 ----------
   Most users have a 0 for this field. Set to 1 if the user is a staff member of **edX**, with corresponding elevated privileges that cut across courses. It does not indicate that the person is a member of the course staff for any given course. 
 
-  Generally, users with this flag set to 1 are either edX program managers responsible for course delivery, or edX developers who need access for testing and debugging purposes. People who have ``is_staff`` = 1 get instructor privileges on all courses, along with having additional debug information show up in the instructor tab.
+  Generally, users with this flag set to 1 are either edX program managers responsible for course delivery, or edX developers who need access for testing and debugging purposes. Users who have ``is_staff`` = 1 have instructor privileges on all courses and can see additional debug information on the Instructor tab.
 
 .. note::
      This designation has no bearing on a user's role in the discussion forums, and confers no elevated privileges there.
@@ -218,9 +218,9 @@ is_active
 -----------
   This value is 1 if the user has clicked on the activation link that was sent to them when they created their account, and 0 otherwise. 
 
-  Users who have ``is_active`` = 0 generally cannot log into the system. However, when users first create an account, they are automatically logged in even though they have not yet activated the account. This is to let them experience the site immediately without having to check their email. A message displays on the dashboard to remind users to check their email and activate their accounts when they have time. When they log out, they cannot log back in again until activation is complete. However, because our sessions last a long time, it is possible for someone to use the site as a student for days without being "active".
+  Users who have ``is_active`` = 0 generally cannot log into the system. However, when users first create an account, they are automatically logged in even though they have not yet activated the account. This is to let them experience the site immediately without having to check their email. A message displays on the dashboard to remind users to check their email and activate their accounts when they have time. When they log out, they cannot log back in again until activation is complete. However, because edX sessions last a long time, it is possible for someone to use the site as a student for days without being "active".
 
-  Once ``is_active`` is set to 1, the only circumstance in which it is set back to 0 is if the user is banned (which is a very rare, manual operation).
+  Once ``is_active`` is set to 1, it is *only* set back to 0 if the user is banned (which is a very rare, manual operation).
 
 --------------
 is_superuser
@@ -259,9 +259,9 @@ Obsolete columns
   * display_tag_filter_strategy
   * consecutive_days_visit_count
 
-  Only users who were part of the prototype 6.002x course run in the Spring of 2012 have any information in these columns. Even for those users, most of this information was never collected. Only the columns with values that are automatically generated have any values in them, such as tag settings.
+  Only users who were part of the prototype 6.002x course run in the Spring of 2012 have any information in these columns. Even for those users, most of this information was never collected. Only the columns with values that are automatically generated have any values in them, such as the tag-related columns.
 
-  These columns are unrelated to the discussion forums that we currently use, and will eventually be dropped from this table.
+  These columns are unrelated to the discussion forums that edX currently uses, and will eventually be dropped from this table.
 
 .. _auth_userprofile:
 
@@ -269,7 +269,7 @@ Obsolete columns
 Columns in the auth_userprofile Table
 ======================================
 
-The ``auth_userprofile`` table is mostly used to store user demographic information collected during the student registration process. We also use it to store certain additional metadata relating to certificates. 
+The ``auth_userprofile`` table is mostly used to store user demographic information collected during the student registration process. It is also used to store certain additional metadata relating to certificates. 
 
 Every row in this table corresponds to one row in ``auth_user``. 
 
@@ -332,23 +332,23 @@ user_id
 ------
 name
 ------
-  String for a user's full name. We make no constraints on language or breakdown into first/last name. The names are never shown to other students. International students usually enter a romanized version of their names, but not always.
+  String for a user's full name. EdX makes no constraints on language or breakdown into first/last name. The names are never shown to other students. International students usually enter a romanized version of their names, but not always. Name changes are permitted, and the previous name is logged in the ``meta`` field.
 
-  It used to be our policy to require manual approval of name changes to guard the integrity of the certificates. Students would submit a name change request and someone from the team would approve or reject as appropriate. Later, we decided to allow the name changes to take place automatically, but to log previous names in the ``meta`` field.
+  **History**: A former edX policy required manual approval of name changes to guard the integrity of the certificates. Students would submit a name change request, and an edX team member would approve or reject the request. 
 
 ----------
 language
 ----------
   No longer used. 
 
-  **History**: User's preferred language, asked during the sign up process for the 6.002x prototype course given in the Spring of 2012. This information stopped being collected after the transition from MITx to edX happened, but we never removed the values from our first group of students. Sometimes written in those languages.
+  **History**: User's preferred language, asked during the sign up process for the 6.002x prototype course given in the Spring of 2012. Sometimes written in those languages. EdX stopped collecting this data after MITx transitioned to edX, but never removed the values for the first group of students.
 
 ----------
 location
 ----------
   No longer used. 
 
-  **History**: User's location, asked during the sign up process for the 6.002x prototype course given in the Spring of 2012. We weren't specific, so people tended to put the city they were in, though some just specified their country and some got as specific as their street address. Again, sometimes romanized and sometimes written in their native language. Like `language`, we stopped collecting this column when we transitioned from MITx to edX, so it's only available for our first batch of students.
+  **History**: User's location, asked during the sign up process for the 6.002x prototype course given in the Spring of 2012. The request was not specific, so people tended to put the city they were in, though some just supplied a country and some got as specific as their street address. Again, sometimes romanized and sometimes written in their native language. Like ``language``, edX stopped collecting this column after MITx transitioned to edX, so it is only available for the first batch of students.
 
 ------
 meta
@@ -357,32 +357,64 @@ meta
 
 .. code-block:: json
 
-    {
-      "old_names" : [
-     ["Mike Smith", "Mike's too informal for a certificate.", "2012-11-15T17:28:12.658126"],
-     ["Michael Smith", "I want to add a middle name as well.", "2013-02-07T11:15:46.524331"]
-      ],
-      "old_emails" : [["mr_mike@email.com", "2012-10-18T15:21:41.916389"]],
-      "6002x_exit_response" : {
-     "rating": ["6"],
-     "teach_ee": ["I do not teach EE."],
-     "improvement_textbook": ["I'd like to get the full PDF."],
-     "future_offerings": ["true"],
-     "university_comparison":
-       ["This course was <strong>on the same level</strong> as the university class."],
-     "improvement_lectures": ["More PowerPoint!"],
-     "highest_degree": ["Bachelor's degree."],
-     "future_classes": ["true"],
-     "future_updates": ["true"],
-     "favorite_parts": ["Releases, bug fixes, and askbot."]
-      }
-    }
+ {
+  "old_names": [
+    [
+      "Mike Smith",
+      "Mike's too informal for a certificate.",
+      "2012-11-15T17:28:12.658126"
+    ],
+    [
+      "Michael Smith",
+      "I want to add a middle name as well.",
+      "2013-02-07T11:15:46.524331"
+    ]
+  ],
+  "old_emails": [
+    [
+      "mr_mike@email.com",
+      "2012-10-18T15:21:41.916389"
+    ]
+  ],
+  "6002x_exit_response": {
+    "rating": [
+      "6"
+    ],
+    "teach_ee": [
+      "I do not teach EE."
+    ],
+    "improvement_textbook": [
+      "I'd like to get the full PDF."
+    ],
+    "future_offerings": [
+      "true"
+    ],
+    "university_comparison": [
+      "This course was <strong>on the same level<\/strong> as the university class."
+    ],
+    "improvement_lectures": [
+      "More PowerPoint!"
+    ],
+    "highest_degree": [
+      "Bachelor's degree."
+    ],
+    "future_classes": [
+      "true"
+    ],
+    "future_updates": [
+      "true"
+    ],
+    "favorite_parts": [
+      "Releases, bug fixes, and askbot."
+    ]
+  }
+ }
 
 The following are details about this metadata. Please note that the "fields" described here are found as JSON attributes *inside* a given ``meta`` field, and are *not* separate database columns of their own.
 
   ``old_names``
 
-    A list of the previous names this user had, and the timestamps at which they submitted a request to change those names. These name change request submissions used to require a staff member to approve it before the name change took effect. This is no longer the case, though we still record their previous names.
+    A list of the previous names this user had, and the timestamps at which they submitted a request to change those names. These name change request submissions used to require a staff member to approve it before the name change took effect. This is no longer the case, though their previous names are still recorded.
 
     Note that the value stored for each entry is the name they had, not the name they requested to get changed to. People often changed their names as the time for certificate generation approached, to replace nicknames with their actual names or correct spelling/punctuation errors.
 
@@ -503,13 +535,13 @@ allow_certificate
 Columns in the student_courseenrollment Table
 ==============================================
 
-A row in this table represents a student's enrollment for a particular course run. If they decide to unenroll in the course, we set ``is_active`` to ``False``. The student's state in ``courseware_studentmodule`` is untouched, so courseware state is not lost when a student unenrolls and then re-enrolls. 
+A row in this table represents a student's enrollment for a particular course run. If a student decides to unenroll from the course, ``is_active`` is set to ``False``. The student's state in ``courseware_studentmodule`` is untouched, so courseware state is not lost when a student unenrolls and then re-enrolls. 
 
 **History**: As of 20 Aug 2013, this table retains the records of students who unenroll. Records are no longer deleted from this table.
 
 A sample of the heading row and a data row in the ``student_courseenrollment`` table follow.
 
-.. code-block:: json
+.. code-block:: sql
 
     id  user_id course_id created is_active mode
 
@@ -577,7 +609,7 @@ A row in this table maps a student's real user ID to an anonymous ID generated t
 
 A sample of the heading row and a data row in the ``user_id_map`` table follow.
 
-.. code-block:: json
+.. code-block:: sql
 
     hash_id id  username
 
@@ -635,7 +667,7 @@ About Modules
 
 It's important to understand what "modules" are in the context of our system, as the terminology can be confusing. For the conventions of this table and many parts of our code, a "module" is a content piece that appears in the courseware. This can be nearly anything that appears when users are in the courseware tab: a video, a piece of HTML, a problem, etc. Modules can also be collections of other modules, such as sequences, verticals (modules stacked together on the same page), weeks, chapters, etc. In fact, the course itself is a top level module that contains all the other contents of the course as children. You can imagine the entire course as a tree with modules at every node.
 
-Modules can store state, but whether and how they do so is up to the implemenation for that particular kind of module. When a user loads a page, we look up all the modules that need to be rendered in order to display it, and then we ask the database to look up state for those modules for that user. If there is a corresponding entry for that user for a given module, we create a new row and set the state to an empty JSON dictionary.
+Modules can store state, but whether and how they do so is up to the implemenation for that particular kind of module. When a user loads a page, teh system looks up all the modules that need to be rendered in order to display it, and then asks the database to look up state for those modules for that user. If there is a corresponding entry for that user for a given module, a new row is created and the state is set to an empty JSON dictionary.
 
 .. _courseware_studentmodule:
 
@@ -647,7 +679,7 @@ The ``courseware_studentmodule`` table holds all courseware state for a given us
 
 A sample of the heading row and a data row in the ``courseware_studentmodule`` table follow.
 
-.. code-block:: json
+.. code-block:: sql
 
     id  module_type module_id student_id  state grade created modified  max_grade done  
     course_id
@@ -718,7 +750,7 @@ module_type
      * - poll_question
        - Not currently used. **History**: This ``module_type`` was included in a single course on a test basis and then deprecated. 
      * - problem
-       - A problem that the user can submit solutions for. We have many different varieties.
+       - A problem that the user can submit solutions for. EdX offers many different varieties.
      * - problemset
        - A collection of problems and supplementary materials, typically used for homeworks and rendered as a horizontal icon bar in the courseware. Use is inconsistent, and some courses use a ``sequential`` instead.
      * - randomize
@@ -738,12 +770,12 @@ module_type
      * - word_cloud
        - A specialized problem that produces a graphic from the words that students enter.
 
-  There's been substantial muddling of these types, particularly between sequentials, problemsets, and videosequences. In the beginning we only had sequentials, and these ended up being used primarily for two purposes: creating a sequence of lecture videos and exercises for instruction, and creating homework problem sets. The ``problemset`` and ``videosequence`` types were created with the hope that our system would have a better semantic understanding of what a sequence actually represented, and could at a later point choose to render them differently to the user if it was appropriate. Due to a variety of reasons, migration over to this has been spotty. They all render the same way at the moment.
+  There's been substantial muddling of these types, particularly between sequentials, problemsets, and videosequences. In the beginning only sequentials were available, and these ended up being used primarily for two purposes: creating a sequence of lecture videos and exercises for instruction, and creating homework problem sets. The ``problemset`` and ``videosequence`` types were created with the hope that our system would have a better semantic understanding of what a sequence actually represented, and could at a later point choose to render them differently to the user if it was appropriate. Due to a variety of reasons, migration over to this has been spotty. They all render the same way at the moment.
 
 -----------
 module_id
 -----------
-  Unique ID for a distinct piece of content in a course, these are recorded as URLs of the form i4x://{org}/{course_num}/{module_type}/{module_name}. Having URLs of this form allows us to give content a canonical representation even as we are in a state of transition between backend data stores.
+  Unique ID for a distinct piece of content in a course, these are recorded as URLs of the form i4x://{org}/{course_num}/{module_type}/{module_name}. Having URLs of this form allows us to give content a canonical representation even during a transition between backend data stores.
 
   As an example, this module_id:
 
@@ -786,7 +818,7 @@ state
 
   ``course``, ``chapter``, ``problemset``, ``sequential``, ``videosequence``
 
-    The state for all of these container modules is a JSON dictionary indicating the user's last known position within this container. This is 1-indexed, not 0-indexed, mostly because it went out that way at one point and we didn't want to later break saved navigation state for users.
+    The state for all of these container modules is a JSON dictionary indicating the user's last known position within this container. This is 1-indexed, not 0-indexed, mostly because it was released that way and a later change would have broken saved navigation state for users.
 
     Example: ``{"position" : 3}``
 
@@ -802,7 +834,7 @@ state
 
   ``conditional``
 
-    Conditionals don't actually store any state, so this value is always an empty JSON dictionary (`'{}'`). We should probably remove these entries altogether.
+    Conditionals don't actually store any state, so this value is always an empty JSON dictionary (`'{}'`). These entries may be removed altogether.
 
   ``problem``
 
@@ -829,7 +861,7 @@ created
 ----------
 modified
 ----------
-  Datetime when we last updated this row. Set to be equal to ``created`` at first. A change in ``modified`` implies that there was a state change, usually in response to a user action like saving or submitting a problem, or clicking on a navigational element that records its state. However it can also be triggered if the module writes multiple times on its first load, like problems do (see note in ``grade``).
+  Datetime when this row was last updated. Set to be equal to ``created`` at first. A change in ``modified`` implies that there was a state change, usually in response to a user action like saving or submitting a problem, or clicking on a navigational element that records its state. However it can also be triggered if the module writes multiple times on its first load, like problems do (see note in ``grade``).
 
 -----------
 max_grade
@@ -843,7 +875,7 @@ max_grade
 ------
 done
 ------
-  Not used. The value 'na' appears in every row.
+  Not used. The value ``na`` appears in every row.
 
 -----------
 course_id
@@ -866,7 +898,7 @@ The ``certificates_generatedcertificate`` table tracks certificate state for stu
 
 A sample of the heading row and two data rows in the ``certificates_generatedcertificate`` table follow.
 
-.. code-block:: json
+.. code-block:: sql
 
  id  user_id  download_url  grade  course_id  key  distinction  status  verify_uuid 
  download_uuid  name  created_date  modified_date error_reason  mode
