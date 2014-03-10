@@ -111,8 +111,8 @@ section.instructor-dashboard-content-2 {
   // }
 
   .request-response-error {
-    margin-top: 1em;
-    margin-bottom: 1em;
+    margin: 0;
+    padding-bottom: ($baseline);
     color: $error-red;
   }
 
@@ -368,9 +368,15 @@ section.instructor-dashboard-content-2 {
 
   .member-lists-management {
 
+    .wrapper-member-select {
+      background-color: $light-gray;
+      padding: ($baseline/2);
+    }
+
     .member-lists-selector {
       display: block;
-      margin: 0 ($baseline/4);
+      margin: ($baseline/4) 0;
+      padding: 5px;
     }
 
     .auth-list-container {
@@ -390,6 +396,7 @@ section.instructor-dashboard-content-2 {
           padding: ($baseline/2);
           background-color: #efefef;
           border: 1px solid $light-gray;
+          display: none; // hiding to prefer dropdown as header
         }
 
         .title {
@@ -458,6 +465,7 @@ section.instructor-dashboard-content-2 {
 
       .revoke {
         color: $lighter-base-font-color;
+        cursor: pointer;
 
         &:hover {
           color: $alert-color;

@@ -117,7 +117,8 @@ class AuthListWidget extends MemberListWidget
 
         # create revoke button and insert it into the row
         $revoke_btn = $ '<div class="revoke"><i class="icon-remove-sign"></i> Revoke access</div>',
-          click: =>
+          class: 'revoke'
+        $revoke_btn.click =>
             @modify_member_access member.email, 'revoke', (error) =>
               # abort on error
               return @show_errors error unless error is null

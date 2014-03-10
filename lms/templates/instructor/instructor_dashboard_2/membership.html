@@ -64,12 +64,16 @@
 <div class="vert-right member-lists-management">
   <h2> ${_("Administration List Management")} </h2>
 
-  <label for="member-lists-selector">Select an Administrator Group:</label>
-  <select id="member-lists-selector" class="member-lists-selector">
-    <option> ${_("Getting available lists...")} </option>
-  </select>
-
   <div class="request-response-error"></div>
+
+  <div class="wrapper-member-select">
+    <label for="member-lists-selector">Select an Administrator Group:</label>
+    <select id="member-lists-selector" class="member-lists-selector">
+      <option> ${_("Getting available lists...")} </option>
+    </select>
+
+  </div>
+
 
   %if not section_data['access']['instructor']:
     <p>
