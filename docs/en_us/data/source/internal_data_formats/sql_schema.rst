@@ -667,7 +667,7 @@ About Modules
 
 It's important to understand what "modules" are in the context of our system, as the terminology can be confusing. For the conventions of this table and many parts of our code, a "module" is a content piece that appears in the courseware. This can be nearly anything that appears when users are in the courseware tab: a video, a piece of HTML, a problem, etc. Modules can also be collections of other modules, such as sequences, verticals (modules stacked together on the same page), weeks, chapters, etc. In fact, the course itself is a top level module that contains all the other contents of the course as children. You can imagine the entire course as a tree with modules at every node.
 
-Modules can store state, but whether and how they do so is up to the implemenation for that particular kind of module. When a user loads a page, teh system looks up all the modules that need to be rendered in order to display it, and then asks the database to look up state for those modules for that user. If there is a corresponding entry for that user for a given module, a new row is created and the state is set to an empty JSON dictionary.
+Modules can store state, but whether and how they do so is up to the implemenation for that particular kind of module. When a user loads a page, the system looks up all the modules that need to be rendered in order to display it, and then asks the database to look up state for those modules for that user. If there is a corresponding entry for that user for a given module, a new row is created and the state is set to an empty JSON dictionary.
 
 .. _courseware_studentmodule:
 
@@ -754,7 +754,7 @@ module_type
      * - problemset
        - A collection of problems and supplementary materials, typically used for homeworks and rendered as a horizontal icon bar in the courseware. Use is inconsistent, and some courses use a ``sequential`` instead.
      * - randomize
-       - Specifies that specified values in a problem changes each time the problem is accessed. 
+       - Identifies a problem in which one of several possible defined alternative problems is randomly selected for display to each student. 
      * - selfassessment
        - Self assessment problems. Used in a single course in Fall 2012 as an early test of the open ended grading system. Deprecated in favor of ``combinedopenended``. 
      * - sequential
@@ -828,7 +828,7 @@ state
 
   ``combinedopenended``
 
-    The JSON document includes attributes that identify the student's ``answer``, a ``rubric_xml`` that includes the complete XML syntax for teh rubric, the ``score`` earned and the ``max_score``, and the ``grader_id`` (the ``auth_user.id``) of each student who assessed the answer. 
+    The JSON document includes attributes that identify the student's ``answer``, a ``rubric_xml`` that includes the complete XML syntax for the rubric, the ``score`` earned and the ``max_score``, and the ``grader_id`` (the ``auth_user.id``) of each student who assessed the answer. 
 
 .. is a complete list of all possible attributes needed? 26 Feb 14  
 
