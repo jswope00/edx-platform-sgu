@@ -417,7 +417,7 @@ class TestVideoTranscriptsDownload(TestVideo):
         _upload_sjson_file(good_sjson, self.item.location)
         self.item.youtube_id_1_0 = _get_subs_id(good_sjson.name)
 
-        text, filename = self.item.get_transcript()
+        text, filename, _ = self.item.get_transcript()
         expected_text = textwrap.dedent("""\
             0
             00:00:00,270 --> 00:00:02,720
@@ -436,7 +436,7 @@ class TestVideoTranscriptsDownload(TestVideo):
         self.item.transcript_language = 'uk'
         self.non_en_file.seek(0)
         _upload_file(self.non_en_file, self.item_descriptor.location, os.path.split(self.non_en_file.name)[1])
-        text, filename = self.item.get_transcript()
+        text, filename, _ = self.item.get_transcript()
         expected_text = textwrap.dedent("""
         0
         00:00:00,12 --> 00:00:00,100
