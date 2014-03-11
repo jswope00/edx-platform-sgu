@@ -358,7 +358,7 @@ class TestVideoTranscriptsDownload(TestVideo):
             """)
 
         self.assertEqual(text, expected_text)
-        self.assertEqual(filename[-4], self.item.sub)
+        self.assertEqual(filename[:-4], self.item.sub)
 
     def test_good_txt_transcript(self):
         good_sjson = _create_file(content=textwrap.dedent("""\
