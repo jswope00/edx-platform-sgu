@@ -224,7 +224,7 @@ class ExternalDiscussionTab(LinkTab):
         key_checker(['link'])(tab)
 
     def to_json(self):
-        return super(ExternalDiscussionTab, self).to_json().items().append(('link', self.link_value)) # NAATODO - test
+        return {'type': self.type(), 'name': self.name, 'link': self.link_value}
 
 class ExternalLinkTab(LinkTab):
     def type(self):
@@ -280,7 +280,6 @@ class StaticTab(CourseTab):
         )
 
     def to_json(self):
-        # NAATODO - this is not working: return super(StaticTab, self).to_json().items().append(('url_slug', self.url_slug))
         return {'type': self.type(), 'name': self.name, 'url_slug': self.url_slug}
 
 class TextbookTabsType(AuthenticatedCourseTab):
@@ -536,7 +535,7 @@ COURSE_TAB_CLASSES = {
     'open_ended': OpenEndedGradingTab,
     'notes': NotesTab,
     'syllabus': SyllabusTab,
-    'instructor': InstructorTab, # NAATODO: not persisted?
+    'instructor': InstructorTab, # not persisted
 }
 
 def link_reverse_func(reverse_name):

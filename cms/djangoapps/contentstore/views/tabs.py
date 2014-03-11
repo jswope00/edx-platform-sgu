@@ -83,7 +83,6 @@ def tabs_handler(request, tag=None, package_id=None, branch=None, version_guid=N
                 static_tab_idx = 0
                 for tab in course_item.tabs:
                     if isinstance(tab, StaticTab):
-                        # NAATODO - test
                         reordered_tabs.append(
                             StaticTab(
                                 name=tab_items[static_tab_idx].display_name,
@@ -108,7 +107,6 @@ def tabs_handler(request, tag=None, package_id=None, branch=None, version_guid=N
         built_in_tabs = []
         for tab in CourseTabList.iterate_displayable(course_item):
             if isinstance(tab, StaticTab):
-                # NAATODO - Test
                 static_tab_loc = old_location.replace(category='static_tab', name=tab.url_slug)
                 static_tabs.append(modulestore('direct').get_item(static_tab_loc))
             else:

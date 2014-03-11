@@ -662,7 +662,6 @@ class XMLModuleStore(ModuleStoreReadBase):
                         # VS[compat]:
                         # Hack because we need to pull in the 'display_name' for static tabs (because we need to edit them)
                         # from the course policy
-                        # NAATODO -TEST
                         if category == "static_tab":
                             tab = CourseTabList.get_tab_by_slug(course=course_descriptor, url_slug=slug)
                             if tab:
