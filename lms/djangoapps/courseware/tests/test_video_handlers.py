@@ -380,7 +380,7 @@ class TestVideoTranscriptsDownload(TestVideo):
 
         _upload_sjson_file(good_sjson, self.item.location)
         self.item.sub = _get_subs_id(good_sjson.name)
-        text, format, mime_type = self.item.get_transcript(format="txt")
+        text, _, _ = self.item.get_transcript("txt")
         expected_text = textwrap.dedent("""\
             Hi, welcome to Edx.
             Let's start with what is on your screen right now.""")

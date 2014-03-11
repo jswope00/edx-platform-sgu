@@ -414,7 +414,7 @@ class VideoModule(VideoFields, XModule):
 
         elif dispatch == 'download':
             try:
-                subs, sub_filename, mime_type = self.get_transcript(format=self.transcript_download_format)
+                subs, sub_filename, mime_type = self.get_transcript(self.transcript_download_format)
             except (NotFoundError, ValueError, KeyError):
                 log.debug("Video@download exception")
                 response = Response(status=404)
@@ -422,7 +422,7 @@ class VideoModule(VideoFields, XModule):
                 response = Response(
                     subs,
                     headerlist=[
-                        ('Content-Disposition', 'attachment; filename="{filename}"'.format(sub_filename)),
+                        ('Content-Disposition', 'attachment; filename="{}"'.format(sub_filename)),
                     ]
                 )
                 response.content_type = mime_type
