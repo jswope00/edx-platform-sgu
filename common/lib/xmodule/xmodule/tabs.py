@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractproperty
+from abc import ABCMeta, abstractproperty, abstractmethod
 
 from xblock.fields import List
 from xmodule.modulestore import Location
@@ -6,26 +6,55 @@ from xmodule.modulestore import Location
 from django.conf import settings
 from django.core.urlresolvers import reverse
 
-# NAATODO - is this doing the correct thing?
-# We only need to scrape strings for i18n in this file, since ugettext is
-# called on them in the template:
+# We only need to scrape strings for i18n in this file, since ugettext is called on them in the template:
 # https://github.com/edx/edx-platform/blob/master/lms/templates/courseware/course_navigation.html#L29
 _ = lambda text: text
-
 
 ##### Tab class.
 class CourseTab(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, name, active_page_name, link_func = None):
+    def __init__(self, name, active_page_name, link_func):
         # name of the tab - may or may not be stored in the database
         self.name = name
 
         # used by UI layers to indicate which tab is active
         self.active_page_name = active_page_name
 
-        # function that computes the link for the tab
+        # function that computes the link for the tab, given the course
         self.link_func = link_func
+
+    @abstractmethod
+    def type(self): pass
+
+    def can_display(self, course, is_user_authenticated, is_user_staff):
+        return True
+
+    def get(self, key, default=None):
+        if key == 'name':
+            return self.name
+        elif key == 'type':
+            return self.type()
+        elif key == 'active_page_name':
+            return self.active_page_name
+        else:
+            return default
+
+    def __getitem__(self, key):
+        item = self.get(key=key, default=KeyError)
+        if item is KeyError:
+            raise KeyError()
+        else:
+            return item
+
+    def __setitem__(self, key, value):
+        # change values of the tab, except for 'type'
+        if key == 'name':
+            self.name = value
+        elif key == 'active_page_name':
+            self.active_page_name = value
+        else:
+            raise KeyError()
 
     @classmethod
     def validate(cls, tab):
@@ -34,215 +63,214 @@ class CourseTab(object):
         """
         pass
 
-    @abstractproperty
-    def type_name(self): pass
-
-    #  A factory function that takes a course and an optional tab if it pre-exists.
+    #  A factory function that takes an optional tab if it pre-exists.
     #  If tab is given, the function can assume that it has passed the validator.
     @classmethod
-    def factory(cls, course, tab, include_authenticated_tabs, include_staff_tabs):
-        tab_type_name = tab['type']
-        if tab_type_name not in COURSE_TAB_CLASSES:
+    def factory(cls, tab):
+        if tab is None:
+            pass
+        tab_type = tab['type']
+        if tab_type not in COURSE_TAB_CLASSES:
             raise InvalidTabsException(
-                'Unknown tab type {0}. Known types: {1}'.format(tab_type_name, COURSE_TAB_CLASSES)
+                'Unknown tab type {0}. Known types: {1}'.format(tab_type, COURSE_TAB_CLASSES)
             )
 
         tab_class = COURSE_TAB_CLASSES[tab['type']]
-        if tab_class is AuthenticatedCourseTab and include_authenticated_tabs is False:
-            return None
-        if tab_class is StaffTab and include_staff_tabs is False:
-            return None
         tab_class.validate(tab)
-        return tab_class.create(course, tab)
+        return tab_class(tab=tab)
 
     def to_json(self):
-        return {'type': self.type_name, 'name': self.name}
+        return {'type': self.type(), 'name': self.name}
 
 class AuthenticatedCourseTab(CourseTab):
-    pass
+    def can_display(self, course, is_user_authenticated, is_user_staff):
+        return is_user_authenticated
 
 class CoursewareTab(CourseTab):
     """
     A tab containing the course content.
     """
-    def type_name(self): return 'courseware'
+    def type(self):
+        return 'courseware'
 
-    @classmethod
-    def create(cls, course, tab=None):
+    def __init__(self, tab=None):
         # Translators: 'Courseware' refers to the tab in the courseware that leads to the content of a course
-        return [
-            cls(
-                name=_('Courseware'),
-                active_page_name=cls.type_name,
-                link_func=link_reverse(cls.type_name, course),
-            )]
+        super(CoursewareTab, self).__init__(
+            name=_('Courseware'),
+            active_page_name=self.type(),
+            link_func=link_reverse_func(self.type()),
+        )
 
 class CourseInfoTab(CourseTab):
     """
     A tab containing information about the course.
     """
-    def type_name(self): return 'course_info'
+    def type(self):
+        return 'course_info'
+
+    def __init__(self, tab=None):
+        # Translators: "Course Info" is the name of the course's information and updates page
+        super(CourseInfoTab, self).__init__(
+            name=tab['name'] if tab else _('Course Info'),
+            active_page_name='info',
+            link_func=link_reverse_func('info'),
+        )
 
     @classmethod
     def validate(cls, tab):
         need_name(tab)
-
-    @classmethod
-    def create(cls, course, tab=None):
-        # Translators: 'Courseware' refers to the tab in the courseware that leads to the content of a course
-        if tab:
-            tab_name=tab['name']
-        else:
-            tab_name = 'Course Info'
-        return [
-            cls(
-                name=tab_name,
-                active_page_name='info',
-                link_func=link_reverse('info', course),
-            )]
 
 class ProgressTab(AuthenticatedCourseTab):
     """
     A tab containing information about the authenticated user's progress.
     """
+    def type(self):
+        return 'progress'
 
-    def type_name(self): return 'progress'
+    def __init__(self, tab=None):
+        super(ProgressTab, self).__init__(
+            name=tab['name'] if tab else _('Progress'),
+            active_page_name=type,
+            link_func=link_reverse_func(self.type()),
+        )
 
-    @classmethod
-    def create(cls, course, tab=None):
-        if not course.hide_progress_tab:
-            if tab:
-                tab_name=tab['name']
-            else:
-                tab_name = 'Progress'
-            return [
-                cls(
-                    name=tab_name,
-                    active_page_name=cls.type_name,
-                    link_func=link_reverse(cls.type_name, course),
-                )]
-        return []
+    def can_display(self, course, is_user_authenticated, is_user_staff):
+        return not course.hide_progress_tab
 
 class WikiTab(CourseTab):
     """
     A tab containing the course wiki.
     """
-    def type_name(self): return 'wiki'
+    def type(self):
+        return 'wiki'
+
+    def __init__(self, tab=None):
+        super(WikiTab, self).__init__(
+            name=tab['name'] if tab else _('Wiki'),
+            active_page_name=self.type(),
+            link_func=link_reverse_func('course_wiki'),
+        )
+
+    def can_display(self, course, is_user_authenticated, is_user_staff):
+        return settings.WIKI_ENABLED
 
     @classmethod
     def validate(cls, tab):
         need_name(tab)
-
-    @classmethod
-    def create(cls, course, tab=None):
-        if settings.WIKI_ENABLED:
-            if tab:
-                tab_name=tab['name']
-            else:
-                tab_name = 'Wiki'
-            return [
-                cls(
-                    name=tab_name,
-                    active_page_name=cls.type_name,
-                    link_func=link_reverse('course_wiki', course),
-                )]
-        return []
 
 class DiscussionTab(CourseTab):
     """
     A tab only for the new Berkeley discussion forums.
     """
-    def type_name(self): return 'discussion'
+    def type(self):
+        return 'discussion'
+
+    def __init__(self, tab=None):
+        # Translators: "Discussion" is the title of the course forum page
+        super(DiscussionTab, self).__init__(
+            name=tab['name'] if tab else _('Discussion'),
+            active_page_name=self.type(),
+            link_func=link_reverse_func('django_comment_client.forum.views.forum_form_discussion'),
+        )
+
+    def can_display(self, course, is_user_authenticated, is_user_staff):
+        return settings.FEATURES.get('ENABLE_DISCUSSION_SERVICE')
 
     @classmethod
     def validate(cls, tab):
         need_name(tab)
 
-    @classmethod
-    def create(cls, course, tab):
-        if settings.FEATURES.get('ENABLE_DISCUSSION_SERVICE'):
-            return [
-                cls(
-                    name=tab['name'],
-                    active_page_name=cls.type_name,
-                    link_func=link_reverse('django_comment_client.forum.views.forum_form_discussion', course),
-                )]
-        return []
+class LinkTab(CourseTab):
+    link_value = ''
 
-    @classmethod
-    def create_new(cls, course):
-        # Translators: "Discussion" is the title of the course forum page
-        return [
-            cls(
-                name=_('Discussion'),
-                active_page_name=cls.type_name,
-                link_func=link_reverse('django_comment_client.forum.views.forum_form_discussion', course),
-            )]
+    def __init__(self, name, active_page_name, link_value):
+        self.link_value = link_value
+        super(LinkTab, self).__init__(
+            name=name,
+            active_page_name=active_page_name,
+            link_func=link_value_func(self.link_value),
+        )
 
-class ExternalDiscussionTab(CourseTab):
+    def get(self, key, default=None):
+        if key == 'link':
+            return self.link_value
+        else:
+            return super(LinkTab, self).get(key)
+
+    def __setitem__(self, key, value):
+        if key == 'link':
+            self.link_value = value
+        else:
+            super(LinkTab, self).__setitem__(key, value)
+
+class ExternalDiscussionTab(LinkTab):
     """
     A tab that links to an external discussion service.
     """
-    def type_name(self): return 'external_discussion'
+    def type(self):
+        return 'external_discussion'
+
+    def __init__(self, tab=None, link_value=None):
+        link_value = tab['link'] if tab else link_value
+        # Translators: 'Discussion' refers to the tab in the courseware that leads to the discussion forums
+        super(ExternalDiscussionTab, self).__init__(
+            name=_('Discussion'),
+            active_page_name='discussion',
+            link_value=self.link_value,
+        )
 
     @classmethod
     def validate(cls, tab):
         key_checker(['link'])(tab)
 
-    @classmethod
-    def create(cls, course, tab):
-        # Translators: 'Discussion' refers to the tab in the courseware that leads to the discussion forums
-        return [
-            cls(
-                name=_('Discussion'),
-                active_page_name='discussion',
-                link_func=link_value(tab['link']),
-            )]
+    def to_json(self):
+        return super(ExternalDiscussionTab, self).to_json().items().append(('link', self.link_value)) # NAATODO - test
 
-    @classmethod
-    def create_new(cls, link):
-        # Translators: 'Discussion' refers to the tab in the courseware that leads to the discussion forums
-        return [
-            cls(
-                name=_('Discussion'),
-                active_page_name='discussion',
-                link_func=link_value(link),
-            )]
+class ExternalLinkTab(LinkTab):
+    def type(self):
+        return 'external_link'
 
-class ExternalLinkTab(CourseTab):
-    def type_name(self): return 'external_link'
+    def __init__(self, tab):
+        super(ExternalLinkTab, self).__init__(
+            name=tab['name'],
+            active_page_name='',  # External links are never active.
+            link_value=tab['link'],
+        )
 
     @classmethod
     def validate(cls, tab):
         key_checker(['name', 'link'])(tab)
 
-    @classmethod
-    def create(cls, course, tab):
-        return [
-            cls(
-                name=tab['name'],
-                active_page_name='',  # External links are never active.
-                link_func=link_value(tab['link']),
-            )]
-
 class StaticTab(CourseTab):
-    def type_name(self): return 'static_tab'
-
     url_slug = ''
+
+    def type(self):
+        return 'static_tab'
 
     @classmethod
     def validate(cls, tab):
         key_checker(['name', 'url_slug'])(tab)
 
-    @classmethod
-    def create(cls, course, tab):
-        static_tab = cls(
-            name=tab['name'],
-            active_page_name='static_tab_{0}'.format(tab['url_slug']),
-            link_func=lambda: reverse(cls.type_name, args=[course.id, tab['url_slug']]),
-            )
-        static_tab.url_slug = tab['url_slug']
-        return [static_tab]
+    def __init__(self, tab=None, name=None, url_slug=None):
+        self.url_slug = tab['url_slug'] if tab else url_slug
+        tab_name = tab['name'] if tab else name
+        super(StaticTab, self).__init__(
+            name=tab_name,
+            active_page_name='static_tab_{0}'.format(self.url_slug),
+            link_func=lambda course: reverse(self.type(), args=[course.id, self.url_slug]),
+        )
+
+    def get(self, key, default=None):
+        if key == 'url_slug':
+            return self.url_slug
+        else:
+            return super(StaticTab, self).get(key)
+
+    def __setitem__(self, key, value):
+        if key == 'url_slug':
+            self.url_slug = value
+        else:
+            super(StaticTab, self).__setitem__(key, value)
 
     def get_location(self, course):
         return Location(
@@ -251,186 +279,200 @@ class StaticTab(CourseTab):
             self.url_slug
         )
 
-class TextbookTabs(AuthenticatedCourseTab):
-    def type_name(self): return 'textbooks'
+    def to_json(self):
+        # NAATODO - this is not working: return super(StaticTab, self).to_json().items().append(('url_slug', self.url_slug))
+        return {'type': self.type(), 'name': self.name, 'url_slug': self.url_slug}
 
-    @classmethod
-    def create(cls, course, tab=None):
-        if settings.FEATURES.get('ENABLE_TEXTBOOK'):
-            return [
-                cls(
-                    name=textbook.title,
-                    active_page_name='textbook/{0}'.format(index),
-                    link_func=lambda: reverse('book', args=[course.id, index]),
-                )
-                for index, textbook in enumerate(course.textbooks)]
-        return []
+class TextbookTabsType(AuthenticatedCourseTab):
+    def __init__(self, tab=None):
+        super(TextbookTabsType, self).__init__('', '', '')
 
-class PDFTextbookTabs(AuthenticatedCourseTab):
-    def type_name(self): return 'pdf_textbooks'
+    @abstractmethod
+    def books(self, course):
+        pass
 
-    @classmethod
-    def create(cls, course, tab):
-        return [
-            cls(
+class TextbookTab(CourseTab):
+    pass
+
+class TextbookTabs(TextbookTabsType):
+    def type(self):
+        return 'textbooks'
+
+    def can_display(self, course, is_user_authenticated, is_user_staff):
+        return settings.FEATURES.get('ENABLE_TEXTBOOK')
+
+    def books(self, course):
+        for index, textbook in enumerate(course.textbooks):
+            yield TextbookTab(
+                name=textbook.title,
+                active_page_name='textbook/{0}'.format(index),
+                link_func=lambda course: reverse('book', args=[course.id, index]),
+            )
+
+class PDFTextbookTabs(TextbookTabsType):
+    def type(self):
+        return 'pdf_textbooks'
+
+    def books(self, course):
+        for index, textbook in enumerate(course.pdf_textbooks):
+            yield TextbookTab(
                 name=textbook['tab_title'],
                 active_page_name='pdftextbook/{0}'.format(index),
-                link_func=lambda: reverse('pdf_book', args=[course.id, index]),
+                link_func=lambda course: reverse('pdf_book', args=[course.id, index]),
             )
-            for index, textbook in enumerate(course.pdf_textbooks)]
 
-class HtmlTextbookTabs(AuthenticatedCourseTab):
-    def type_name(self): return 'html_textbooks'
+class HtmlTextbookTabs(TextbookTabsType):
+    def type(self):
+        return 'html_textbooks'
 
-    @classmethod
-    def create(cls, course, tab):
-        return [
-            cls(
+    def books(self, course):
+        for index, textbook in enumerate(course.html_textbooks):
+            yield TextbookTab(
                 name=textbook['tab_title'],
                 active_page_name='htmltextbook/{0}'.format(index),
-                link_func=lambda: reverse('html_book', args=[course.id, index]),
+                link_func=lambda course: reverse('html_book', args=[course.id, index]),
             )
-            for index, textbook in enumerate(course.html_textbooks)]
 
 class GradingTab(object):
     pass
 
 class StaffTab(object):
-    pass
+    def can_display(self, course, is_user_authenticated, is_user_staff):
+        return is_user_staff
 
 class StaffGradingTab(CourseTab, GradingTab, StaffTab):
-    def type_name(self): return 'staff_grading'
+    def type(self):
+        return 'staff_grading'
 
-    @classmethod
-    def create(cls, course, tab):
+    def __init__(self, tab=None):
         # Translators: "Staff grading" appears on a tab that allows
         # staff to view open-ended problems that require staff grading
-        return [
-            cls(
-                name=_("Staff grading"),
-                active_page_name=cls.type_name,
-                link_func=link_reverse(cls.type_name, course),
-            )]
+        super(StaffGradingTab, self).__init__(
+            name=_("Staff grading"),
+            active_page_name=self.type(),
+            link_func=link_reverse_func(self.type()),
+        )
 
 class PeerGradingTab(AuthenticatedCourseTab, GradingTab):
-    def type_name(self): return 'peer_grading'
+    def type(self):
+        return 'peer_grading'
 
-    @classmethod
-    def create(cls, course, tab):
+    def __init__(self, tab=None):
         # Translators: "Peer grading" appears on a tab that allows
         # students to view open-ended problems that require grading
-        return [
-            cls(
-                name=_("Peer grading"),
-                active_page_name=cls.type_name,
-                link_func=link_reverse(cls.type_name, course),
-            )]
+        super(PeerGradingTab, self).__init__(
+            name=_("Peer grading"),
+            active_page_name=self.type(),
+            link_func=link_reverse_func(self.type()),
+        )
 
 class OpenEndedGradingTab(AuthenticatedCourseTab, GradingTab):
-    def type_name(self): return 'open_ended'
+    def type(self):
+        return 'open_ended'
 
-    @classmethod
-    def create(cls, course, tab):
+    def __init__(self, tab=None):
         # Translators: "Open Ended Panel" appears on a tab that, when clicked, opens up a panel that
         # displays information about open-ended problems that a user has submitted or needs to grade
-        return [
-            cls(
-                name=_("Open Ended Panel"),
-                active_page_name=cls.type_name,
-                link_func=link_reverse('open_ended_notifications', course),
-            )]
+        super(OpenEndedGradingTab, self).__init__(
+            name=_("Open Ended Panel"),
+            active_page_name=self.type(),
+            link_func=link_reverse_func('open_ended_notifications'),
+        )
 
 class SyllabusTab(CourseTab):
-    def type_name(self): return 'syllabus'
+    def type(self):
+        return 'syllabus'
 
-    @classmethod
-    def create(cls, course, tab=None):
-        if hasattr(course, 'syllabus_present') and course.syllabus_present:
-            return [
-                cls(
-                    name=_('Syllabus'),
-                    active_page_name=cls.type_name,
-                    link_func=link_reverse(cls.type_name, course),
-                )]
-        return []
+    def can_display(self, course, is_user_authenticated, is_user_staff):
+        return hasattr(course, 'syllabus_present') and course.syllabus_present
+
+    def __init__(self, tab=None):
+        super(SyllabusTab, self).__init__(
+            name=_('Syllabus'),
+            active_page_name=self.type(),
+            link_func=link_reverse_func(self.type()),
+        )
 
 class NotesTab(AuthenticatedCourseTab):
-    def type_name(self): return 'notes'
+    def type(self):
+        return 'notes'
 
-    @classmethod
-    def create(cls, course, tab):
-        if settings.FEATURES.get('ENABLE_STUDENT_NOTES'):
-            return [
-                cls(
-                    name=tab['name'],
-                    active_page_name=cls.type_name,
-                    link_func=link_reverse(cls.type_name, course),
-                )]
-        return []
+    def can_display(self, course, is_user_authenticated, is_user_staff):
+        return settings.FEATURES.get('ENABLE_STUDENT_NOTES')
+
+    def __init__(self, tab=None):
+        super(NotesTab, self).__init__(
+            name=tab['name'],
+            active_page_name=self.type(),
+            link_func=link_reverse_func(self.type()),
+        )
 
 class InstructorTab(CourseTab, StaffTab):
-    def type_name(self): return 'instructor'
+    def type(self):
+        return 'instructor'
 
-    @classmethod
-    def create(cls, course, tab=None):
+    def __init__(self, tab=None):
         # Translators: 'Instructor' appears on the tab that leads to the instructor dashboard, which is
         # a portal where an instructor can get data and perform various actions on their course
-        return [
-            cls(
-                name=_('Instructor'),
-                active_page_name=cls.type_name,
-                link_func=link_reverse('instructor_dashboard', course),
-            )]
+        super(InstructorTab, self).__init__(
+            name=_('Instructor'),
+            active_page_name=self.type(),
+            link_func=link_reverse_func('instructor_dashboard'),
+        )
 
 class CourseTabList(List):
-    @classmethod
-    def create_default(cls, course):
+    @staticmethod
+    def initialize_default(course):
 
-        course_tab_list = []
-
-        course_tab_list.extend(CoursewareTab.create(course))
-        course_tab_list.extend(CourseInfoTab.create(course))
-        course_tab_list.extend(SyllabusTab.create(course))
-        course_tab_list.extend(TextbookTabs.create(course))
+        course.tabs.append(CoursewareTab())
+        course.tabs.append(CourseInfoTab())
+        course.tabs.append(SyllabusTab())
+        course.tabs.append(TextbookTabs())
 
         # # If they have a discussion link specified, use that even if we feature
         # # flag discussions off. Disabling that is mostly a server safety feature
         # # at this point, and we don't need to worry about external sites.
         if course.discussion_link:
-            course_tab_list.extend(ExternalDiscussionTab.create_new(course.discussion_link))
+            course.tabs.append(ExternalDiscussionTab(None, course.discussion_link))
         else:
-            course_tab_list.extend(DiscussionTab.create_new(course))
+            course.tabs.append(DiscussionTab())
 
-        course_tab_list.extend(WikiTab.create(course))
-        course_tab_list.extend(ProgressTab.create(course))
+        course.tabs.append(WikiTab())
+        course.tabs.append(ProgressTab())
 
-        return course_tab_list
-
-    @classmethod
-    def create(cls, course, include_authenticated_tabs, include_staff_tabs):
-        """
-        Return the tabs to show a particular user, as a list of CourseTab items.
-        """
-        if not hasattr(course, 'tabs') or not course.tabs:
-            return cls.create_default(course)
-
-        # validate the tabs
-        cls.__validate_tabs(course)
-
-        tab_list = []
+    @staticmethod
+    def get_discussion(course):
         for tab in course.tabs:
-            # expect handlers to return lists--handles things that are turned off
-            # via feature flags, and things like 'textbook' which might generate multiple tabs.
-            tab_list.extend(CourseTab.factory(course, tab, include_authenticated_tabs, include_staff_tabs))
+            if isinstance(tab, DiscussionTab) or isinstance(tab, ExternalDiscussionTab):
+                return tab
+        return None
 
-        # Instructor tab is special--automatically added if user is staff for the course
-        if include_staff_tabs:
-            tab_list.extend(InstructorTab.create(course))
+    @staticmethod
+    def get_tab_by_slug(course, url_slug):
+        """
+        Look for a tab with the specified 'url_slug'.  Returns the tab or None if not found.
+        """
+        for tab in course.tabs:
+            # The validation code checks that these exist.
+            if tab.get('url_slug') == url_slug:
+                return tab
+        return None
 
-        return tab_list
+    @staticmethod
+    def iterate_displayable(course, is_user_authenticated=True, is_user_staff=True):
+        for tab in course.tabs:
+            if tab.can_display(course, is_user_authenticated, is_user_staff):
+                if isinstance(tab, TextbookTabsType):
+                    for book in tab.books(course):
+                        yield book
+                else:
+                    yield tab
+        instructor_tab = InstructorTab()
+        if instructor_tab.can_display(course, is_user_authenticated, is_user_staff):
+            yield instructor_tab
 
     @classmethod
-    def __validate_tabs(cls, course):
+    def __validate_tabs(cls, tabs):
         """
         Check that the tabs set for the specified course is valid.  If it
         isn't, raise InvalidTabsException with the complaint.
@@ -441,8 +483,7 @@ class CourseTabList(List):
         - All the tabs must have a type in VALID_TAB_TYPES.
 
         """
-        tabs = course.tabs
-        if tabs is None:
+        if tabs is None or len(tabs) == 0:
             return
 
         if len(tabs) < 2:
@@ -459,62 +500,53 @@ class CourseTabList(List):
         # Possible other checks: make sure tabs that should only appear once (e.g. courseware)
         # are actually unique (otherwise, will break active tag code)
 
-    @staticmethod
-    def get_static_tab_by_slug(course, tab_slug):
-        """
-        Look for a tab with type 'static_tab' and the specified 'tab_slug'.  Returns
-        the tab (a config dict), or None if not found.
-        """
-        if course.tabs:
-            for tab in course.tabs:
-                # The validation code checks that these exist.
-                if tab['type'] == 'static_tab' and tab['url_slug'] == tab_slug:
-                    return StaticTab.create(course, tab)
-        return None
-
     def to_json(self, values):
         json_data = []
-        for val in values:
-            if isinstance(val, CourseTab):
-                json_data.extend(val.to_json())
-            elif isinstance(val, tuple):
-                json_data.append(val)
-            else:
-                continue
+        if values:
+            for val in values:
+                if isinstance(val, CourseTab):
+                    json_data.append(val.to_json())
+                elif isinstance(val, dict):
+                    json_data.append(val)
+                else:
+                    continue
         return json_data
 
+    def from_json(self, values):
+        self.__validate_tabs(values)
+        tabs = []
+        for tab in values:
+            tabs.append(CourseTab.factory(tab))
+        return tabs
 
 COURSE_TAB_CLASSES = {
     'courseware': CoursewareTab,
     'course_info': CourseInfoTab,
     'wiki': WikiTab,
     'discussion': DiscussionTab,
-
     'external_discussion': ExternalDiscussionTab,
     'external_link': ExternalLinkTab,
-
     'textbooks': TextbookTabs,
     'pdf_textbooks': PDFTextbookTabs,
     'html_textbooks': HtmlTextbookTabs,
     'progress': ProgressTab,
-
     'static_tab': StaticTab,
-
     'peer_grading': PeerGradingTab,
     'staff_grading': StaffGradingTab,
     'open_ended': OpenEndedGradingTab,
     'notes': NotesTab,
-    'syllabus': SyllabusTab
+    'syllabus': SyllabusTab,
+    'instructor': InstructorTab, # NAATODO: not persisted?
 }
 
-def link_reverse(reverse_name, course):
+def link_reverse_func(reverse_name):
     """
     Returns a function that calls the django reverse URL lookup
     """
-    return lambda: reverse(reverse_name, args=[course.id])
+    return lambda course: reverse(reverse_name, args=[course.id])
 
-def link_value(value):
-    return lambda: value
+def link_value_func(value):
+    return lambda course: value
 
 #### Validators
 #  A validator takes a dict and raises InvalidTabsException if required

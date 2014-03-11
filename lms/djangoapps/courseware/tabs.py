@@ -14,7 +14,7 @@ import logging
 
 from .module_render import get_module
 from xmodule.modulestore.django import modulestore
-from xmodule.tabs import CourseTabList, StaffGradingTab, PeerGradingTab, OpenEndedGradingTab
+from xmodule.tabs import InstructorTab, StaffGradingTab, PeerGradingTab, OpenEndedGradingTab, CourseTabList
 from courseware.access import has_access
 from courseware.model_data import FieldDataCache
 from open_ended_grading import open_ended_notifications
@@ -35,18 +35,8 @@ def image_for_tab(course_tab, user, course):
         return notifications['img_path']
     return None
 
-def get_course_tabs(user, course):
-    """
-    Return the tabs to show a particular user, as a list of CourseTab items.
-    """
-    return CourseTabList.create(
-        course,
-        user.is_authenticated(),
-        has_access(user, course, 'staff')
-    )
-
 def get_static_tab_contents(request, course, static_tab):
-    loc = static_tab.get_location()
+    loc = static_tab.get_location(course)
     field_data_cache = FieldDataCache.cache_for_descriptor_descendents(course.id,
         request.user, modulestore().get_instance(course.id, loc), depth=0)
     tab_module = get_module(request.user, request, loc, field_data_cache, course.id,

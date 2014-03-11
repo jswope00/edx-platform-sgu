@@ -226,7 +226,7 @@ class CourseFields(object):
     show_calculator = Boolean(help="Whether to show the calculator in this course", default=False, scope=Scope.settings)
     display_name = String(help="Display name for this module", default="Empty", display_name="Display Name", scope=Scope.settings)
     show_chat = Boolean(help="Whether to show the chat widget in this course", default=False, scope=Scope.settings)
-    tabs = CourseTabList(help="List of tabs to enable in this course", scope=Scope.settings)
+    tabs = CourseTabList(help="List of tabs to enable in this course", scope=Scope.settings, default=[])
     end_of_course_survey_url = String(help="Url for the end-of-course survey", scope=Scope.settings)
     discussion_blackouts = List(help="List of pairs of start/end dates for discussion blackouts", scope=Scope.settings)
     discussion_topics = Dict(help="Map of topics names to ids", scope=Scope.settings)
@@ -464,12 +464,8 @@ class CourseDescriptor(CourseFields, SequenceDescriptor):
         if self.discussion_topics == {}:
             self.discussion_topics = {_('General'): {'id': self.location.html_id()}}
 
-        if not self.tabs:
-            self.tabs = CourseTabList.create_default(
-                self,
-                include_authenticated_tabs = True,
-                include_staff_tabs = True
-            )
+        if not hasattr(self, 'tabs') or not self.tabs or len(self.tabs) == 0:
+            CourseTabList.initialize_default(self)
 
     def set_grading_policy(self, course_policy):
         """
