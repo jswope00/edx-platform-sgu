@@ -193,7 +193,6 @@
     &.coming-soon {
       @extend %m-btn-secondary;
       pointer-events: none !important;
-      outline: none;
       display: block;
     }
   }

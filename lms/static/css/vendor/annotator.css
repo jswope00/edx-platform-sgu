@@ -270,7 +270,6 @@
 	opacity: 0.2;
 	text-indent: -900em;
 	background-color: transparent;
-	outline: none;
 }
 
 .annotator-viewer .annotator-controls button:hover,
@@ -366,7 +365,6 @@
 .annotator-editor .annotator-item input:focus,
 .annotator-editor .annotator-item textarea:focus{
 	background-color: rgb(243, 243, 243);
-	outline: none;
 }
 
 .annotator-editor .annotator-item input[type=radio],
@@ -521,7 +519,6 @@
 .annotator-editor a.annotator-focus,
 .annotator-filter .annotator-filter-active label,
 .annotator-filter .annotator-filter-navigation button:hover {
-	outline: none;
 	border-color: rgb(67, 90, 160);
 	background-color: rgb(56, 101, 249);
 	background-image: -webkit-gradient(
@@ -805,7 +802,6 @@
 }
 
 .annotator-filter .annotator-filter-property input:focus {
-	outline: none;
 	background-color: #fff;
 }
 
