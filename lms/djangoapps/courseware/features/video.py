@@ -455,7 +455,9 @@ def select_transcript_format(_step, format):
     assert button.text.strip() == '.' + format
 
 
-@step('transcript is downloadable$')
-def transcript_is_downloadable(_step):
+@step('transcript is downloadable and starts with "([^"]*)" text$')
+def transcript_is_downloadable(_step, text):
     url = world.css_find('.video-tracks a').first['href']
-    assert ReuqestHandlerWithSessionId().get(url).is_success()
+    request = ReuqestHandlerWithSessionId()
+    assert request.get(url).is_success()
+    assert request.content.startswith(text.strip())
