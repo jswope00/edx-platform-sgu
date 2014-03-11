@@ -1,17 +1,17 @@
 # pylint: disable=missing-docstring,maybe-no-member
 
-from datetime import datetime
-
-from mock import patch
-from mock import sentinel
-from pytz import UTC
+from track import views
+from mock import patch, sentinel
+from freezegun import freeze_time
 
 from django.test import TestCase
 from django.test.client import RequestFactory
 
-from track import views
+from datetime import datetime
+expected_time = datetime.utcnow()
 
 
+@freeze_time(expected_time)
 class TestTrackViews(TestCase):
 
     def setUp(self):
@@ -20,12 +20,6 @@ class TestTrackViews(TestCase):
         patcher = patch('track.views.tracker')
         self.mock_tracker = patcher.start()
         self.addCleanup(patcher.stop)
-
-        self._expected_timestamp = datetime.now(UTC)
-        self._datetime_patcher = patch('track.views.datetime')
-        self.addCleanup(self._datetime_patcher.stop)
-        mock_datetime_mod = self._datetime_patcher.start()
-        mock_datetime_mod.datetime.now.return_value = self._expected_timestamp  # pylint: disable=maybe-no-member
 
         self.path_with_course = '/courses/foo/bar/baz/xmod/'
         self.url_with_course = 'http://www.edx.org' + self.path_with_course
@@ -51,7 +45,7 @@ class TestTrackViews(TestCase):
             'event': '{}',
             'agent': '',
             'page': self.url_with_course,
-            'time': self._expected_timestamp,
+            'time': expected_time,
             'host': 'testserver',
             'context': {
                 'course_id': 'foo/bar/baz',
@@ -72,7 +66,7 @@ class TestTrackViews(TestCase):
             'event': '{}',
             'agent': '',
             'page': None,
-            'time': self._expected_timestamp,
+            'time': expected_time,
             'host': 'testserver',
             'context': {},
         }
@@ -90,7 +84,7 @@ class TestTrackViews(TestCase):
             'event': '{}',
             'agent': '',
             'page': None,
-            'time': self._expected_timestamp,
+            'time': expected_time,
             'host': '',
             'context': {},
         }
@@ -120,7 +114,7 @@ class TestTrackViews(TestCase):
             'event': expected_event_data,
             'agent': 'agent',
             'page': None,
-            'time': self._expected_timestamp,
+            'time': expected_time,
             'host': 'testserver',
             'context': {
                 'course_id': '',
