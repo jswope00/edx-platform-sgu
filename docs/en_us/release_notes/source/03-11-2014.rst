@@ -11,6 +11,13 @@ Course staff documentation, *Building a Course with edX Studio*, is available on
 
 .. _online: http://edx.readthedocs.org/projects/ca/en/latest/
 
+Recent changes to *Building a Course with edX Studio* include:
+
+* `The Course Start Date <http://edx.readthedocs.org/projects/ca/en/latest/create_new_course.html#the-course-start-date>`_ 
+* `The Course End Date <http://edx.readthedocs.org/projects/ca/en/latest/create_new_course.html#the-course-end-date>`_ 
+* `Add a Course Image <http://edx.readthedocs.org/projects/ca/en/latest/create_new_course.html#add-a-course-image>`_ 
+* `Add a Course Introduction Video <http://edx.readthedocs.org/projects/ca/en/latest/create_new_course.html#add-a-course-video>`_ 
+* `Describe Your Course <http://edx.readthedocs.org/projects/ca/en/latest/create_new_course.html#describe-your-course>`_ 
 
 *************
 edX Studio
