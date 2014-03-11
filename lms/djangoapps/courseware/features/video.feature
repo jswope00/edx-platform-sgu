@@ -184,7 +184,7 @@ Feature: LMS Video component
       | {"zh": "chinese_transcripts.srt"} | OEoXaMPEzfM | true           |
     And I select language with code "zh"
     And I see "好 各位同学" text in the captions
-    Then transcript is downloadable and starts with "好 各位同学" text
+    Then transcript is downloadable and has "好 各位同学" text
 
   # 21
   Scenario: Download button works correctly w/o english transcript in HTML5 mode of Video component
@@ -193,4 +193,4 @@ Feature: LMS Video component
       | {"zh": "chinese_transcripts.srt"} | OEoXaMPEzfM | true           |
     And I select language with code "zh"
     And I see "好 各位同学" text in the captions
-    Then transcript is downloadable and starts with "好 各位同学" text
+    Then transcript is downloadable and has "好 各位同学" text
