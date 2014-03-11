@@ -170,8 +170,10 @@ class SplitTestModule(SplitTestFields, XModule):
         fragment.initialize_js('ABTestSelector')
         return fragment
 
-    def studio_preview(self, context):
-        # Render each of the children one after the other
+    def studio_preview_view(self, context):
+        """
+        Renders the Studio preview by rendering each child so that they can all be seen and edited.
+        """
         fragment = Fragment()
         contents = []
 
@@ -195,10 +197,6 @@ class SplitTestModule(SplitTestFields, XModule):
         Render the contents of the chosen condition for students, and all the
         conditions for staff.
         """
-        # When rendering in Studio, use the custom preview rendering
-        if context and context['runtime_type'] == 'studio':
-            return self.studio_preview(context)
-
         if self.child is None:
             # raise error instead?  In fact, could complain on descriptor load...
             return Fragment(content=u"<div>Nothing here.  Move along.</div>")
@@ -236,7 +234,7 @@ class SplitTestModule(SplitTestFields, XModule):
 
 
 @XBlock.needs('user_tags')  # pylint: disable=abstract-method
-@XBlock.needs('partitions')
+@XBlock.wants('partitions')
 class SplitTestDescriptor(SplitTestFields, SequenceDescriptor):
     # the editing interface can be the same as for sequences -- just a container
     module_class = SplitTestModule

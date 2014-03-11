@@ -27,3 +27,10 @@ class CmsBlockMixin(XBlockMixin):
     """
     published_date = DateTuple(help="Date when the module was published", scope=Scope.settings)
     published_by = Integer(help="Id of the user who published this module", scope=Scope.settings)
+
+    def studio_preview_view(self, context):
+        """
+        Renders Studio's preview of a component when rendering an xblock and its children.
+        The default implementation just renders the student view.
+        """
+        return self.student_view(context)
