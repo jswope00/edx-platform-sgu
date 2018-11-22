@@ -319,7 +319,7 @@ class RegistrationFormFactory(object):
 
         # Translators: These instructions appear on the registration form, immediately
         # below a field meant to hold the user's email address.
-        email_instructions = _(u"This is what you will use to login.")
+        email_instructions = _(u"SGU students MUST use their SGU student e-mail in order for course enrollments to appear.")
 
         form_desc.add_field(
             "email",
@@ -389,13 +389,11 @@ class RegistrationFormFactory(object):
         """
         # Translators: This label appears above a field on the registration form
         # meant to hold the user's public username.
-        username_label = _(u"Public Username")
-
+        username_label = _(u"SGU username or Public username")
         username_instructions = _(
             # Translators: These instructions appear on the registration form, immediately
             # below a field meant to hold the user's public username.
-            u"The name that will identify you in your courses. "
-            u"It cannot be changed later."
+            u"SGU students MUST use their SGU username"
         )
         form_desc.add_field(
             "username",

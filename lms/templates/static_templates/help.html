@@ -2,15 +2,22 @@
 <%! from django.utils.translation import ugettext as _ %>
 <%inherit file="../main.html" />
 
-<%block name="pagetitle">${_("Help")}</%block>
+<%block name="pagetitle">${_("MPH FAQ")}</%block>
 
 <main id="main" aria-label="Content" tabindex="-1">
     <section class="container about">
-        <h1>
-            <%block name="pageheader">${page_header or _("Help")}</%block>
-        </h1>
-        <p>
-            <%block name="pagecontent">${page_content or _("This page left intentionally blank. Feel free to add your own content.")}</%block>
-        </p>
+        <h1>${_("MPH Frequently Asked Questions")}</h1>
+	<h3>Q: Are my MPH courses going to be online?</h3>
+        <p>A: Yes, some of your courses may be delivered in a dual-delivery format, where the course is offered simultaneously to on-campus and off-campus students. We see the enormous benefits to the students &amp; University to offer some courses in this format so they can be delivered to our students who are on campus <i>or</i> off campus.</p>
+	</br>
+	<h3>Q: How will dual-delivery courses be different?</h3>        
+        <p>Students who are on campus will be able to attend lectures and office hours in person. Students who are off campus will be able to attend these virtually. Both cohorts will be required to use an online proctoring software for any proctored exams. </p>
+<p>Beyond those differences, <i>all other elements</i> of the class will be identical for both groups. All students will complete the pre-lecture materials found on this website. Everyone will submit their assignments via the online course website. Everyone will receive the same status e-mails. All students should participate in the online forums.
+</p> 
+	</br>
+	<h3>Q: Are my courses on MyCourses (Sakai)?</h3>
+	<p>A: No, for the MPH program we’re working with a new platform called Online SGU which can be found at : https://online.sgu.edu/. You are here now. </p>
+	</br>
+	<h3>
     </section>
 </main>

@@ -47,6 +47,7 @@
             );
             this.$field_select_score_single = findAndAssert(this.$section, "input[name='score-select-single']");
             this.$btn_task_history_single = this.$section.find("input[name='task-history-single']");
+            this.$btn_generate_student_grades = this.$section.find("input[name='generate_student_grades']");
             this.$table_task_history_single = this.$section.find('.task-history-single-table');
             this.$field_exam_grade = this.$section.find("input[name='entrance-exam-student-select-grade']");
             this.$btn_reset_entrance_exam_attempts = this.$section.find("input[name='reset-entrance-exam-attempts']");
@@ -191,6 +192,24 @@
             });
             this.$btn_rescore_problem_if_higher_single.click(function() {
                 return studentadmin.rescore_problem_single(true);
+            });
+            this.$btn_generate_student_grades.click(function() {
+                var sendData = {
+                        all_students: true
+                };
+
+                $.ajax({
+                    type: 'GET',
+                    dataType: 'json',
+                    url: studentadmin.$btn_generate_student_grades.data('endpoint'),
+                    data: sendData,
+                    success: function(data) {
+                        $('#report-grade-response').empty().show().append(data);
+                    },
+                    error: statusAjaxError(function() {
+                        alert('ERROR');
+                    })
+                });
             });
             this.$btn_task_history_single.click(function() {
                 var errorMessage, fullErrorMessage, problemToReset, sendData, uniqStudentIdentifier;

@@ -1126,6 +1126,10 @@ ZENDESK_USER = None
 ZENDESK_API_KEY = None
 ZENDESK_CUSTOM_FIELDS = {}
 
+##### ZOOM #####
+ZOOM_API_KEY = None
+ZOOM_API_SECRET = None
+
 ##### EMBARGO #####
 EMBARGO_SITE_REDIRECT_URL = None
 
@@ -2316,6 +2320,8 @@ INSTALLED_APPS = [
 
     # API Documentation
     'rest_framework_swagger',
+    #Custom Xblock
+    's3uploader_downloader',
 ]
 
 ######################### CSRF #########################################

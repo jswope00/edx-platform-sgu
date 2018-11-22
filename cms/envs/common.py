@@ -1156,6 +1156,8 @@ INSTALLED_APPS = [
 
     # API Documentation
     'rest_framework_swagger',
+    #Custom Xblock
+    's3uploader_downloader',
 ]
 
 
@@ -1522,6 +1524,10 @@ ZENDESK_URL = None
 ZENDESK_USER = None
 ZENDESK_API_KEY = None
 ZENDESK_CUSTOM_FIELDS = {}
+
+##### ZOOM #####
+ZOOM_API_KEY = None
+ZOOM_API_SECRET = None
 
 
 ############## Settings for Completion API #########################

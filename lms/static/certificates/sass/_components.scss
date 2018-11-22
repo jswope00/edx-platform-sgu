@@ -214,7 +214,7 @@
 
   position: relative;
   top: -(spacing-vertical(base));
-  border-top: rem(4) solid $cert-base-color;
+  border: 5px solid #231f1f;
 
   // type
   .accomplishment-type {
@@ -463,7 +463,7 @@
     .accomplishment-recipient,
     .accomplishment-course,
          {
-      font-family: $font-family-serif;
+        font-family: "Open Sans";
     }
 
     .accomplishment-recipient,
@@ -489,9 +489,8 @@
     }
 
     // hide the fancy
-    .accomplishment-signatories .signatory-signature,
     .accomplishment-type-symbol {
-      display: none;
+      display: block;
     }
   }
 }

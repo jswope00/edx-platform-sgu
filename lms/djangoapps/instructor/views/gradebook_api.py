@@ -86,7 +86,8 @@ def get_grade_book_page(request, course, course_key):
     with modulestore().bulk_operations(course.location.course_key):
         student_info = [
             {
-                'username': student.username,
+		'username': student.profile.name,
+                #'username': student.username,
                 'id': student.id,
                 'email': student.email,
                 'grade_summary': CourseGradeFactory().read(student, course).summary

@@ -205,6 +205,23 @@
 %endif
 %endif
 
+%if section_data['access']['instructor']:
+  <div class="course-specific-container action-type-container">
+    <hr>
+    <h2>${_('GRADE EXPORT FOR BANNER')}</h2>
+    <label>
+      ${_("Click the following button to generate and send grades to Banner:")}
+    </label>
+    <br></br>
+    <p>
+      <input type="button" class="molly-guard" name="generate_student_grades" value="${_("Generate Grades for Banner")}" data-endpoint="${ section_data['generate_student_grades_url'] }">
+    </p>
+    <p>
+      <div class="request-response msg copy" id="report-grade-response" style="display: none;border-radius: 25px;border: 2px solid #AAAAAA;padding: 20px;width: 600px;"></div>
+    </p>
+  </div>
+%endif
+
 %if settings.FEATURES.get('ENABLE_INSTRUCTOR_BACKGROUND_TASKS'):
 <div class="running-tasks-container action-type-container">
     <h4 class="hd hd-4">${_("Pending Tasks")}</h4>

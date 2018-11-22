@@ -36,6 +36,7 @@ from django.views.decorators.cache import cache_control
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods, require_POST
 from opaque_keys import InvalidKeyError
+from opaque_keys.edx.locations import SlashSeparatedCourseKey
 from opaque_keys.edx.keys import CourseKey, UsageKey
 from six import text_type
 
@@ -3432,3 +3433,131 @@ def _create_error_response(request, msg):
     in JSON form.
     """
     return JsonResponse({"error": _(msg)}, 400)
+def students_update_enrollment_modified(emailsList, course_id, r_action):
+
+    """
+    Enroll or unenroll students by email.
+    Requires staff access.
+    Query Parameters:
+    - action in ['enroll', 'unenroll']
+    - identifiers is string containing a list of emails and/or usernames separated by anything split_input_list can handle.
+    - auto_enroll is a boolean (defaults to false)
+        If auto_enroll is false, students will be allowed to enroll.
+        If auto_enroll is true, students will be enrolled as soon as they register.
+    - email_students is a boolean (defaults to false)
+        If email_students is true, students will be sent email notification
+        If email_students is false, students will not be sent email notification
+    Returns an analog to this JSON structure: {
+        "action": "enroll",
+        "auto_enroll": false,
+        "results": [
+            {
+                "email": "testemail@test.org",
+                "before": {
+                    "enrollment": false,
+                    "auto_enroll": false,
+                    "user": true,
+                    "allowed": false
+                },
+                "after": {
+                    "enrollment": true,
+                    "auto_enroll": false,
+                    "user": true,
+                    "allowed": false
+                }
+            }
+        ]
+    }
+    """
+    course_id = SlashSeparatedCourseKey.from_deprecated_string(course_id)
+    action = r_action
+    identifiers = emailsList
+    auto_enroll = True
+    email_students = False
+    reason = None
+    enrollment_obj = None
+    state_transition = DEFAULT_TRANSITION_STATE
+
+    email_params = {}
+
+    results = []
+    for identifier in identifiers:
+        # First try to get a user object from the identifer
+        user = None
+        language = None
+        email = identifier
+
+        try:
+            # Use django.core.validators.validate_email to check email address
+            # validity (obviously, cannot check if email actually /exists/,
+            # simply that it is plausibly valid)
+            validate_email(email)  # Raises ValidationError if invalid
+            if action == 'enroll':
+                before, after, enrollment_obj = enroll_email(
+                    course_id, email, auto_enroll, email_students, email_params, language=language
+                )
+                before_enrollment = before.to_dict()['enrollment']
+                before_user_registered = before.to_dict()['user']
+                before_allowed = before.to_dict()['allowed']
+                after_enrollment = after.to_dict()['enrollment']
+                after_allowed = after.to_dict()['allowed']
+
+                if before_user_registered:
+                    if after_enrollment:
+                        if before_enrollment:
+                            state_transition = ENROLLED_TO_ENROLLED
+                        else:
+                            if before_allowed:
+                                state_transition = ALLOWEDTOENROLL_TO_ENROLLED
+                            else:
+                                state_transition = UNENROLLED_TO_ENROLLED
+                else:
+                    if after_allowed:
+                        state_transition = UNENROLLED_TO_ALLOWEDTOENROLL
+
+            elif action == 'unenroll':
+                before, after = unenroll_email(
+                    course_id, email, email_students, email_params, language=language
+                )
+                before_enrollment = before.to_dict()['enrollment']
+                before_allowed = before.to_dict()['allowed']
+                enrollment_obj = CourseEnrollment.get_enrollment(user, course_id)
+
+                if before_enrollment:
+                    state_transition = ENROLLED_TO_UNENROLLED
+                else:
+                    if before_allowed:
+                        state_transition = ALLOWEDTOENROLL_TO_UNENROLLED
+                    else:
+                        state_transition = UNENROLLED_TO_UNENROLLED
+
+            else:
+                return HttpResponseBadRequest(strip_tags(
+                    "Unrecognized action '{}'".format(action)
+                ))
+
+        except ValidationError:
+            # Flag this email as an error if invalid, but continue checking
+            # the remaining in the list
+            results.append({
+                'identifier': identifier,
+                'invalidIdentifier': True,
+            })
+
+        except Exception as exc:  # pylint: disable=broad-except
+            # catch and log any exceptions
+            # so that one error doesn't cause a 500.
+            log.exception(u"Error while #{}ing student")
+            log.exception(exc)
+            results.append({
+                'identifier': identifier,
+                'error': True,
+            })
+
+    response_payload = {
+        'action': action,
+        'results': results,
+        'auto_enroll': auto_enroll,
+    }
+    return JsonResponse(response_payload)
+

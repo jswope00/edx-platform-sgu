@@ -290,7 +290,8 @@ class CourseGrade(CourseGradeBase):
         Computes and returns the grade percentage from the given
         result from the grader.
         """
-        return round(grader_result['percent'] * 100 + 0.05) / 100
+        #return round(grader_result['percent'] * 100 + 0.05) / 100
+	return round(grader_result['percent'],3)
 
     @staticmethod
     def _compute_letter_grade(grade_cutoffs, percent):

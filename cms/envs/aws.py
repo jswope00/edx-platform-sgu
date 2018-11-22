@@ -308,6 +308,10 @@ ZENDESK_CUSTOM_FIELDS = ENV_TOKENS.get('ZENDESK_CUSTOM_FIELDS', ZENDESK_CUSTOM_F
 with open(CONFIG_ROOT / CONFIG_PREFIX + "auth.json") as auth_file:
     AUTH_TOKENS = json.load(auth_file)
 
+# ZOOM
+ZOOM_API_KEY = AUTH_TOKENS.get("ZOOM_API_KEY")
+ZOOM_API_SECRET = AUTH_TOKENS.get("ZOOM_API_SECRET")
+
 ############### XBlock filesystem field config ##########
 if 'DJFS' in AUTH_TOKENS and AUTH_TOKENS['DJFS'] is not None:
     DJFS = AUTH_TOKENS['DJFS']
@@ -595,3 +599,4 @@ plugin_settings.add_plugins(__name__, plugin_constants.ProjectType.CMS, plugin_c
 ########################## Derive Any Derived Settings  #######################
 
 derive_settings(__name__)
+

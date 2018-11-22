@@ -5,6 +5,7 @@ Instructor API endpoint urls.
 from django.conf.urls import url
 
 from lms.djangoapps.instructor.views import api, gradebook_api
+from lms.djangoapps.instructor.management.commands import csv_reader_members
 
 urlpatterns = [
     url(r'^students_update_enrollment$', api.students_update_enrollment, name='students_update_enrollment'),
@@ -24,6 +25,7 @@ urlpatterns = [
     url(r'^get_anon_ids$', api.get_anon_ids, name='get_anon_ids'),
     url(r'^get_student_progress_url$', api.get_student_progress_url, name='get_student_progress_url'),
     url(r'^reset_student_attempts$', api.reset_student_attempts, name='reset_student_attempts'),
+    url(r'^generate_student_grades$',csv_reader_members.generate_student_grades, name="generate_student_grades"),
     url(r'^rescore_problem$', api.rescore_problem, name='rescore_problem'),
     url(r'^override_problem_score$', api.override_problem_score, name='override_problem_score'),
     url(r'^reset_student_attempts_for_entrance_exam$', api.reset_student_attempts_for_entrance_exam,

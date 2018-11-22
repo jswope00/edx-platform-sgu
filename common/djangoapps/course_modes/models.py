@@ -142,18 +142,21 @@ class CourseMode(models.Model):
     NO_ID_PROFESSIONAL_MODE = 'no-id-professional'
     CREDIT_MODE = 'credit'
 
-    DEFAULT_MODE = Mode(
-        settings.COURSE_MODE_DEFAULTS['slug'],
-        settings.COURSE_MODE_DEFAULTS['name'],
-        settings.COURSE_MODE_DEFAULTS['min_price'],
-        settings.COURSE_MODE_DEFAULTS['suggested_prices'],
-        settings.COURSE_MODE_DEFAULTS['currency'],
-        settings.COURSE_MODE_DEFAULTS['expiration_datetime'],
-        settings.COURSE_MODE_DEFAULTS['description'],
-        settings.COURSE_MODE_DEFAULTS['sku'],
-        settings.COURSE_MODE_DEFAULTS['bulk_sku'],
-    )
-    DEFAULT_MODE_SLUG = settings.COURSE_MODE_DEFAULTS['slug']
+    DEFAULT_MODE = Mode(HONOR, _('Honor Code'), 0, '', 'usd', None, None, None, None)
+    DEFAULT_MODE_SLUG = HONOR
+
+    #/*DEFAULT_MODE = Mode(
+    #    settings.COURSE_MODE_DEFAULTS['slug'],
+    #    settings.COURSE_MODE_DEFAULTS['name'],
+    #    settings.COURSE_MODE_DEFAULTS['min_price'],
+    #    settings.COURSE_MODE_DEFAULTS['suggested_prices'],
+    #    settings.COURSE_MODE_DEFAULTS['currency'],
+    #    settings.COURSE_MODE_DEFAULTS['expiration_datetime'],
+    #    settings.COURSE_MODE_DEFAULTS['description'],
+    #    settings.COURSE_MODE_DEFAULTS['sku'],
+    #    settings.COURSE_MODE_DEFAULTS['bulk_sku'],
+    #)
+    #DEFAULT_MODE_SLUG = settings.COURSE_MODE_DEFAULTS['slug']
 
     ALL_MODES = [AUDIT, CREDIT_MODE, HONOR, NO_ID_PROFESSIONAL_MODE, PROFESSIONAL, VERIFIED, ]
 
@@ -692,7 +695,7 @@ class CourseMode(models.Model):
         be GeneratedCertificate records with mode='audit' which are
         eligible.
         """
-        if mode_slug == cls.AUDIT or mode_slug == cls.HONOR:
+        if mode_slug == cls.AUDIT :
             return False
 
         return True

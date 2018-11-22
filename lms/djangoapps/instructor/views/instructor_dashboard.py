@@ -583,6 +583,7 @@ def _section_student_admin(course, access):
         'list_entrace_exam_instructor_tasks_url': reverse('list_entrance_exam_instructor_tasks',
                                                           kwargs={'course_id': unicode(course_key)}),
         'spoc_gradebook_url': reverse('spoc_gradebook', kwargs={'course_id': unicode(course_key)}),
+        'generate_student_grades_url': reverse('generate_student_grades', kwargs={'course_id': unicode(course_key)}),
     }
     return section_data
 
