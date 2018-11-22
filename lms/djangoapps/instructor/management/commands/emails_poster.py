@@ -7,7 +7,7 @@ from csv_reader_members import create_unenrollment_list
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        #update_users_table()
+        update_users_table()
         update_members_table()
         enrollObject = create_enrollment_list()
         unenrollObject = create_unenrollment_list()
